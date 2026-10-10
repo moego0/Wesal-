@@ -1,0 +1,51 @@
+databases:
+  - name: wesal-postgres
+    databaseName: wesal_db
+    user: wesal_user
+    plan: free
+    region: frankfurt
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Django REST API Backend
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: wesal-backend
+    runtime: python
+    region: frankfurt
+    plan: free
+    rootDir: backend
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn wesal_backend.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: TIME_ZONE
+        value: "Africa/Cairo"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wesal-postgres
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://wesal-frontend.onrender.com"
+      - key: WHATSAPP_VERIFY_TOKEN
+        value: "wesal_webhook_verify_token_2026"
+
+  # ----------------------------------------------------------------------------
+  # 2. Next.js Web Frontend
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: wesal-frontend
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm run start"
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: "https://wesal-backend.onrender.com/api"
