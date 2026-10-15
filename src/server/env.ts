@@ -38,7 +38,20 @@ const schema = z.object({
 export type Env = z.infer<typeof schema>;
 
 function load(): Env {
-  const parsed = schema.safeParse(process.env);
+  const isBuild =
+    process.env.npm_lifecycle_event === "build" ||
+    process.env.NEXT_PHASE === "phase-production-build";
+
+  const rawEnv = isBuild
+    ? {
+        DATABASE_URL: "postgresql://build:build@localhost:5432/build",
+        REDIS_URL: "redis://localhost:6379",
+        SESSION_SECRET: "build_session_secret_at_least_32_characters_long_for_build",
+        ...process.env,
+      }
+    : process.env;
+
+  const parsed = schema.safeParse(rawEnv);
 
   if (!parsed.success) {
     const lines = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`);
