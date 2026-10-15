@@ -1,0 +1,34 @@
+{
+  "messages": {
+    "title": "Message log",
+    "subtitle": "Every reminder sent and every reply that came back, across all patients",
+    "filters": {
+      "patient": "Patient",
+      "patientPlaceholder": "Name or phone number",
+      "delivery": "Delivery state",
+      "response": "Patient response",
+      "allStates": "All",
+      "from": "From date",
+      "to": "To date",
+      "submit": "Search",
+      "clear": "Clear filters"
+    },
+    "columns": {
+      "patient": "Patient",
+      "medication": "Medication",
+      "date": "Date",
+      "time": "Dose time",
+      "delivery": "Delivery and response",
+      "receivedAt": "Reply received"
+    },
+    "legend": "Outlined box = how the delivery went on our side. Filled pill = what the patient said. Two separate facts: a message that arrived with no reply does not mean the dose was taken.",
+    "attempts": "Send attempts: {count}",
+    "lastFailureLabel": "Last attempt failed:",
+    "neverAttempted": "No send attempt recorded",
+    "showing": "Showing {from}–{to} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "empty": "No messages match these filters",
+    "emptyHint": "Try widening the date range or removing a filter"
+  }
+}

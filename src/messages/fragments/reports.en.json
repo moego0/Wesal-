@@ -1,0 +1,103 @@
+{
+  "reports": {
+    "title": "Operations report",
+    "subtitle": "Delivery, patient-reported responses and verified outcomes, reported separately over the window you choose",
+    "window": {
+      "label": "Window",
+      "days": "{days} days",
+      "submit": "Show"
+    },
+    "noData": "No data",
+    "delivery": {
+      "badge": "Our side",
+      "title": "Delivery",
+      "caption": "This is about our own infrastructure: how many reminders we tried to send and how many actually arrived. Not about the patient.",
+      "attempted": "Send attempts",
+      "delivered": "Delivered",
+      "failed": "Failed",
+      "expired": "Expired",
+      "due": "Doses in the window",
+      "sent": "Accepted by WhatsApp",
+      "neverAttempted": "Past due with no attempt",
+      "cancelledByUs": "Cancelled by us",
+      "rate": "Delivery rate",
+      "rateHint": "Doses that arrived, out of all send attempts",
+      "inbound": "Inbound messages from patients",
+      "inboundReceived": "Received",
+      "inboundUnrouted": "Could not be matched to a patient",
+      "inboundFailed": "Failed to process",
+      "inboundWarning": "Some patient messages could not be processed. Those replies are lost, so the response figures below understate the real picture."
+    },
+    "responses": {
+      "badge": "Patient-reported",
+      "title": "Patient-reported responses",
+      "caption": "What the patient said, in their own words. A reply is not proof a dose was taken — it is their account, recorded as given.",
+      "scorable": "Doses the patient could answer",
+      "scorableHint": "Doses that reached the patient with a window to answer, excluding doses our own failures never delivered",
+      "rate": "Response rate",
+      "rateHint": "Out of the doses the patient could answer",
+      "adherence": "Patient-reported adherence",
+      "adherenceHint": "Doses the patient said they took, out of the doses they could answer",
+      "taken": "Taken",
+      "takenLate": "Taken late",
+      "missed": "Missed",
+      "noReply": "No reply",
+      "noReplyHint": "Settled with no answer. Silence is not confirmation, and it is not a missed dose either.",
+      "inRateHint": "These are the figures in the rate",
+      "notCountedTitle": "Counted outside the rate",
+      "problem": "Problem reported",
+      "problemHint": "A problem report does not settle the dose for adherence; it opens a follow-up of its own",
+      "remindLater": "Asked to be reminded later",
+      "unattributed": "Reply not tied to a dose",
+      "inFlight": "Still awaiting a reply",
+      "inFlightHint": "Still inside its response window. There is no evidence yet either way.",
+      "patterns": "Missed doses by time",
+      "patternsHint": "Only misses the patient reported themselves, so you can see whether one particular dose is being forgotten.",
+      "byDayOfWeek": "By day of week",
+      "byTimeOfDay": "By time of day",
+      "MORNING": "Morning",
+      "AFTERNOON": "Afternoon",
+      "EVENING": "Evening",
+      "NIGHT": "Late night",
+      "missedOfTotal": "{missed} of {total}",
+      "missedNone": "No misses reported in this window",
+      "problemsTitle": "Reported problem reasons",
+      "problemsSubtitle": "What patients reported, most frequent first",
+      "problemsTotal": "{count} problem reports in the window",
+      "problemsEmpty": "No problems reported in this window",
+      "problemNoReason": "No details given"
+    },
+    "verification": {
+      "badge": "Pharmacist-verified",
+      "title": "Verified outcomes",
+      "caption": "The only verified figures on this page: responses a pharmacist reviewed and either confirmed or corrected. Every other number here is the patient's account.",
+      "recorded": "Recorded responses",
+      "confirmed": "Confirmed by a pharmacist",
+      "corrected": "Corrected by a pharmacist",
+      "unverified": "Not yet verified",
+      "rate": "Verification rate",
+      "rateHint": "Out of the responses recorded in the window",
+      "note": "A patient's own report is stored unverified, and a pharmacist's review is recorded beside it as a separate fact."
+    },
+    "followUps": {
+      "badge": "Operations",
+      "title": "Follow-up and workload",
+      "caption": "Follow-up cases and the team's interventions in the window",
+      "opened": "Cases opened",
+      "withFirstAction": "Given a first action",
+      "resolved": "Closed",
+      "completion": "Completion rate",
+      "completionHint": "Out of the cases opened in the window"
+    },
+    "workload": {
+      "title": "Interventions per user",
+      "total": "Interventions in total",
+      "columns": {
+        "user": "Name",
+        "interventions": "Interventions"
+      },
+      "empty": "No interventions recorded in this window",
+      "unknownUser": "User not found"
+    }
+  }
+}

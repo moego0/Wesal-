@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:developers.facebook.com)",
+      "Bash(curl -s --max-time 25 \"https://dailymed.nlm.nih.gov/dailymed/services/v2/drugnames.json?drug_name=metformin\")",
+      "Bash(curl -s --max-time 25 \"https://rxnav.nlm.nih.gov/REST/approximateTerm.json?term=metfor&maxEntries=5\")",
+      "Bash(curl -s --max-time 20 \"https://dailymed.nlm.nih.gov/dailymed/services/v2/drugnames.json?drug_name=metf\")",
+      "Bash(curl -s --max-time 20 \"https://dailymed.nlm.nih.gov/dailymed/services/v2/drugnames.json?drug_name=augmen\")",
+      "Bash(curl -s --max-time 20 \"https://dailymed.nlm.nih.gov/dailymed/services/v2/drugnames.json?drug_name=metformin\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('count:', len\\(d.get\\('data',[]\\)\\)\\); import collections; print\\(collections.Counter\\(x['name_type'] for x in d['data']\\)\\)\")",
+      "Bash(curl -s --max-time 20 \"https://rxnav.nlm.nih.gov/REST/drugs.json?name=metformin\")",
+      "Bash(curl -s --max-time 20 \"https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=metfromin\")",
+      "Bash(curl -s -o /dev/null -w \"dailymed metformin: %{time_total}s\\\\n\" --max-time 25 \"https://dailymed.nlm.nih.gov/dailymed/services/v2/drugnames.json?drug_name=metformin\")",
+      "Bash(curl -s -o /dev/null -w \"rxnav drugs:        %{time_total}s\\\\n\" --max-time 25 \"https://rxnav.nlm.nih.gov/REST/drugs.json?name=metformin\")",
+      "WebFetch(domain:dailymed.nlm.nih.gov)"
+    ]
+  }
+}

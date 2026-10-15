@@ -1,0 +1,80 @@
+{
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Pharmacy details and alert rule thresholds",
+    "nav": {
+      "label": "Settings sections",
+      "profile": "Pharmacy details",
+      "users": "Users",
+      "audit": "Audit log"
+    },
+    "profile": {
+      "title": "Pharmacy details",
+      "hint": "The name and details that appear on everything that goes out to patients.",
+      "name": "Pharmacy name",
+      "timeZone": "Time zone",
+      "timeZoneHint": "Every dose, quiet hour and report is calculated in this zone.",
+      "defaultLocale": "Default language",
+      "quietStart": "Quiet hours start",
+      "quietEnd": "Quiet hours end",
+      "quietHint": "No reminders are sent between these times. Times are 24-hour, in the pharmacy's own zone.",
+      "reason": "Reason for the change (optional)",
+      "reasonHint": "Stored on the audit record.",
+      "submit": "Save details"
+    },
+    "channels": {
+      "title": "WhatsApp numbers",
+      "hint": "The numbers reminders are sent from. Read-only here — a number is a routing key, so changing it is a support task.",
+      "number": "Number",
+      "provider": "Provider",
+      "status": "Status",
+      "empty": "No numbers connected yet"
+    },
+    "rules": {
+      "title": "Alert rules",
+      "subtitle": "{count} rules run against this pharmacy's data",
+      "hint": "These are the thresholds the alert engine reads. Every change is written to the audit log, and a new version is created — alerts already raised keep pointing at the version that raised them.",
+      "override": "Custom",
+      "catalogDefault": "Default",
+      "version": "Version {version}",
+      "severity": "Severity",
+      "updatedAt": "Last changed {date}",
+      "neverChanged": "Never changed",
+      "paramsTitle": "Thresholds",
+      "submit": "Save",
+      "range": "Allowed {min}–{max}",
+      "dryRun": "Dry run",
+      "dryRunHint": "How many alerts this would have raised in the last 30 days.",
+      "dryRunSubmit": "Calculate",
+      "dryRunResult": "{alerts} alerts against {patients} patients in the last 30 days",
+      "dryRunClean": "No alerts in the last 30 days with these values",
+      "dryRunSample": "Projected from a sample of {sample} patients, most recently enrolled first",
+      "dryRunInvalid": "Those values cannot be projected — check the range shown beside each field",
+      "unit": {
+        "count": "doses",
+        "days": "days",
+        "ratio": "ratio"
+      }
+    },
+    "ok": {
+      "PROFILE_SAVED": "Pharmacy details saved.",
+      "RULE_SAVED": "Saved. A dry run of the new values gives {alerts} alerts over the last 30 days.",
+      "RULE_SAVED_UNPROJECTED": "Saved. The dry run could not be completed, so there is no projection for these values yet."
+    },
+    "error": {
+      "title": "Nothing was saved.",
+      "INVALID_INPUT": "One of the values is not accepted.",
+      "NOT_FOUND": "That pharmacy no longer exists.",
+      "FORBIDDEN": "Your role cannot change pharmacy settings.",
+      "field": {
+        "name": "The pharmacy name must be between 2 and 120 characters.",
+        "timeZone": "That is not a time zone the scheduler recognises.",
+        "defaultLocale": "That is not a language this app supports.",
+        "quietHoursStart": "Enter a 24-hour time, for example 22:00.",
+        "quietHoursEnd": "Enter a 24-hour time, for example 07:00.",
+        "ruleKey": "That rule is not in the catalogue.",
+        "params": "One of the thresholds is outside the range shown beside its field."
+      }
+    }
+  }
+}

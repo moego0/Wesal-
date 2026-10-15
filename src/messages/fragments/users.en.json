@@ -1,0 +1,79 @@
+{
+  "users": {
+    "title": "Users",
+    "subtitle": "{count} people have access to this pharmacy",
+    "nav": {
+      "label": "Settings sections",
+      "profile": "Pharmacy details",
+      "users": "Users",
+      "audit": "Audit log"
+    },
+    "invite": {
+      "title": "Add a colleague",
+      "hint": "If the address already has an account at another pharmacy, it is added here as a second membership rather than duplicated.",
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Mobile number (optional)",
+      "role": "Role",
+      "password": "Password (optional)",
+      "passwordHint": "Leave empty and the account is created without one, so it cannot sign in until someone sets a password. Fill it in to provision the account now.",
+      "submit": "Add"
+    },
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Mobile",
+      "role": "Role",
+      "lastLogin": "Last login",
+      "actions": "Actions"
+    },
+    "active": "Active",
+    "inactive": "Deactivated",
+    "status": {
+      "ACTIVE": "Account active",
+      "SUSPENDED": "Account suspended",
+      "INVITED": "Invitation not activated"
+    },
+    "statusHint": "This is the account itself, not this pharmacy's access to it. A suspended or never-activated account cannot sign in at any pharmacy.",
+    "accessHint": "Access to this pharmacy only.",
+    "you": "You",
+    "youHint": "You cannot change your own role or deactivate your own account.",
+    "neverLoggedIn": "Never signed in",
+    "roleLabel": "Role",
+    "roleSubmit": "Change role",
+    "deactivate": "Deactivate",
+    "deactivateConfirm": "They will not be able to sign in. Their history and audit trail stay.",
+    "reactivate": "Reactivate",
+    "adminCount": "{count} active admins",
+    "adminCountWarning": "Only one active admin. Demoting or deactivating them is refused until another admin exists.",
+    "reason": "Reason (optional)",
+    "empty": "No users yet",
+    "emptyHint": "Add the first colleague so someone else can sign in",
+    "footnote": "Everyone added here is a colleague at this pharmacy. Deactivating someone ends their access on their next page load — sessions are re-checked on every request, so there is nothing to revoke by hand.",
+    "ok": {
+      "MEMBER_INVITED": "Colleague added.",
+      "ROLE_CHANGED": "Role changed. It takes effect on their next page load.",
+      "MEMBER_ACTIVATED": "Access restored. They can sign in again.",
+      "MEMBER_DEACTIVATED": "Access ended. Their history and audit trail are unchanged.",
+      "NO_CHANGE": "Nothing to change — that was already the setting."
+    },
+    "error": {
+      "title": "Nothing was changed.",
+      "NOT_FOUND": "That account is not part of this pharmacy.",
+      "SELF_ROLE": "You cannot change your own role. Ask another admin.",
+      "SELF_DEACTIVATE": "You cannot deactivate your own account. Ask another admin.",
+      "LAST_ADMIN": "This is the last active admin. The pharmacy must always have one, so this was refused.",
+      "EMAIL_TAKEN": "That person is already a user at this pharmacy.",
+      "INVALID_INPUT": "Some of those details are not accepted.",
+      "FORBIDDEN": "Your role cannot manage users.",
+      "field": {
+        "email": "Enter a valid email address.",
+        "fullName": "The name must be between 2 and 120 characters.",
+        "role": "Pick one of the roles listed.",
+        "phoneE164": "That mobile number is too long.",
+        "initialPassword": "A password must be at least 10 characters.",
+        "membershipId": "That account could not be identified."
+      }
+    }
+  }
+}

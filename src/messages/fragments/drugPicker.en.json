@@ -1,0 +1,13 @@
+{
+  "drugPicker": {
+    "hint": "Type the English name — pick a suggestion or just keep typing",
+    "loading": "Searching…",
+    "noResults": "No match in the drug list — type the name yourself",
+    "error": "Couldn't load suggestions — keep typing, the field works as usual",
+    "suggestionsLabel": "Drug name suggestions",
+    "resultsAnnouncement": "{count} suggestions available",
+    "generic": "Generic",
+    "brand": "Brand",
+    "attribution": "Drug names from DailyMed and RxNorm — U.S. National Library of Medicine"
+  }
+}
