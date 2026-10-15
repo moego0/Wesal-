@@ -1,0 +1,28 @@
+# Dependencies (reinstalled inside the image)
+node_modules
+
+# Build output (produced inside the image)
+.next
+out
+build
+
+# Environment / secrets — NEVER copy into the image
+.env
+.env.*
+!.env.example
+
+# Git / CI / editor
+.git
+.gitignore
+.github
+.vscode
+.claude
+.vitest
+
+# Docs & tests (not needed at runtime)
+docs
+tests
+
+# OS junk
+.DS_Store
+Thumbs.db
