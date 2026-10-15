@@ -428,7 +428,7 @@ export async function sendReminder(
     result = await provider.sendTemplate({
       to: event.patient.phoneE164,
       templateName: "hello_world",
-      languageCode: "en_US",
+      languageCode: "en",
       variables: {},
       callbackData: dispatchId,
       correlationId: dispatchId,

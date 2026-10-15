@@ -22,14 +22,14 @@ async function main() {
     id: patient?.id,
     fullName: patient?.fullName,
     phoneE164: patient?.phoneE164,
-    messagingConsentState: patient?.messagingConsentState,
+    messagingOptOutAt: patient?.messagingOptOutAt,
     preferredLocale: patient?.preferredLocale,
     lastInboundAtUtc: patient?.lastInboundAtUtc,
   });
 
   if (patient) {
     for (const s of patient.schedules) {
-      console.log(`\nSchedule ${s.id} (${s.medication.medicationNameText}): status=${s.status}, times=${JSON.stringify(s.timesOfDayLocal)}`);
+      console.log(`\nSchedule ${s.id} (${s.medication.medicationNameText}): status=${s.status}, times=${JSON.stringify(s.timesOfDay)}`);
       for (const ev of s.events) {
         console.log(`  Event ${ev.id}: doseAtUtc=${ev.doseAtUtc.toISOString()} localTime=${ev.doseLocalTime} state=${ev.deliveryState} cancelReason=${ev.cancelReason} attemptCount=${ev.attemptCount}`);
       }
@@ -45,14 +45,14 @@ async function main() {
     console.log(`Dispatch ${d.id}: status=${d.status} provider=${d.provider} providerMsgId=${d.providerMessageId} err=${d.errorCode}: ${d.errorMessage}`);
   }
 
-  const webhooks = await systemPrisma.inboundWebhookEvent.findMany({
+  const webhooks = await systemPrisma.inboundMessage.findMany({
     orderBy: { receivedAtUtc: "desc" },
     take: 5,
   });
-  console.log("\n=== RECENT INBOUND WEBHOOKS ===");
+  console.log("\n=== RECENT INBOUND MESSAGES ===");
   console.log(`Total count: ${webhooks.length}`);
   for (const w of webhooks) {
-    console.log(`Webhook ${w.id}: provider=${w.provider} status=${w.processingStatus} eventType=${w.eventType} payload=${JSON.stringify(w.rawPayload).slice(0, 100)}`);
+    console.log(`Message ${w.id}: providerMsgId=${w.providerMessageId} status=${w.processingStatus} type=${w.type} payload=${JSON.stringify(w.rawPayload).slice(0, 100)}`);
   }
 }
 

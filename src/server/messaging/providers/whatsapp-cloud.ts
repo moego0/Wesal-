@@ -192,7 +192,7 @@ function makeIpv4Fetch(): typeof fetch {
       undiciFetch(input as Parameters<typeof undiciFetch>[0], {
         ...(init as Parameters<typeof undiciFetch>[1]),
         dispatcher: agent,
-      }) as Promise<Response>;
+      }) as unknown as Promise<Response>;
   } catch {
     // undici not available — fall back to global fetch (tests, edge runtime).
     return fetch;
