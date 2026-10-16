@@ -344,8 +344,20 @@ async function main() {
       lastSyncedAtUtc: new Date(),
       components: [
         {
+          // The body is deliberately wordier than the message needs to be.
+          // Meta rejects a template whose variables are too dense for its
+          // length ("this template has too many variables for its length"),
+          // and the three variables here are all load-bearing — the patient's
+          // name because shared family handsets are common, see
+          // `sendReminder`. The only remaining lever is static text, so the
+          // sentence after the times exists to satisfy that ratio. Do not
+          // tighten this wording without re-submitting to Meta. Keep it
+          // purely transactional: promotional filler is what gets a reminder
+          // reclassified as MARKETING, at roughly 18x the per-patient cost.
           type: "BODY",
-          text: "تذكير لـ {{1}}: معاد {{2}} الساعة {{3}}. خدت الدواء؟",
+          text:
+            "تذكير بموعد الدواء لـ {{1}}: معاد {{2}} الساعة {{3}}.\n" +
+            "خدت الدواء؟ رد علينا بالزرار اللي تحت، ولو عندك أي سؤال أو مشكلة كلم الصيدلية على طول.",
         },
         {
           type: "BUTTONS",

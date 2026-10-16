@@ -411,9 +411,14 @@ export async function sendReminder(
         })
       : await provider.sendInteractive({
           to: event.patient.phoneE164,
+          // Mirrors the approved template's body so a patient gets the same
+          // wording whether the message goes out free-form or as a template.
+          // The trailing sentence is not padding for its own sake: it is what
+          // keeps the template inside Meta's variable-to-length ratio. See the
+          // body comment in prisma/seed.ts.
           bodyText:
-            `تذكير لـ ${patientName}: معاد ${medicationName} الساعة ${doseText}.\n` +
-            `خدت الدواء؟`,
+            `تذكير بموعد الدواء لـ ${patientName}: معاد ${medicationName} الساعة ${doseText}.\n` +
+            `خدت الدواء؟ رد علينا بالزرار اللي تحت، ولو عندك أي سؤال أو مشكلة كلم الصيدلية على طول.`,
           buttons: reminderButtons(event.id),
           callbackData: dispatchId,
           correlationId: dispatchId,
