@@ -9,6 +9,7 @@ try {
 }
 
 import { hostname } from "node:os";
+import { execSync } from "node:child_process";
 import { Worker, type Job } from "bullmq";
 import { systemPrisma } from "@/server/db";
 import { env } from "@/server/env";
@@ -183,6 +184,27 @@ async function main(): Promise<void> {
   const config = env();
 
   console.log(`[worker] starting on ${HOST}, provider=${config.MESSAGING_PROVIDER}`);
+
+  // Automatically apply pending database migrations at boot
+  try {
+    console.log("[worker] applying pending database migrations...");
+    execSync("npx prisma migrate deploy", { stdio: "inherit" });
+    console.log("[worker] database migrations up to date.");
+  } catch (err) {
+    console.warn("[worker] database migration notice:", err instanceof Error ? err.message : err);
+  }
+
+  // If the database has no pharmacy records yet, auto-seed the initial pharmacy, admin, and rules
+  try {
+    const pharmacyCount = await systemPrisma.pharmacy.count();
+    if (pharmacyCount === 0) {
+      console.log("[worker] empty database detected, auto-seeding initial pharmacy...");
+      execSync("npx tsx prisma/seed.ts", { stdio: "inherit" });
+      console.log("[worker] database seeded successfully.");
+    }
+  } catch (err) {
+    console.warn("[worker] auto-seed notice:", err instanceof Error ? err.message : err);
+  }
 
   // The catalog lives in TypeScript, so the RuleDefinition rows are derived from
   // it at boot rather than frozen into a migration that would drift from the
