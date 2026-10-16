@@ -12,7 +12,9 @@
       "Bash(curl -s --max-time 20 \"https://rxnav.nlm.nih.gov/REST/spellingsuggestions.json?name=metfromin\")",
       "Bash(curl -s -o /dev/null -w \"dailymed metformin: %{time_total}s\\\\n\" --max-time 25 \"https://dailymed.nlm.nih.gov/dailymed/services/v2/drugnames.json?drug_name=metformin\")",
       "Bash(curl -s -o /dev/null -w \"rxnav drugs:        %{time_total}s\\\\n\" --max-time 25 \"https://rxnav.nlm.nih.gov/REST/drugs.json?name=metformin\")",
-      "WebFetch(domain:dailymed.nlm.nih.gov)"
+      "WebFetch(domain:dailymed.nlm.nih.gov)",
+      "Bash(node -e \"const en=require\\('./src/messages/en.json'\\); console.log\\('EN top-level keys:', Object.keys\\(en\\).join\\(', '\\)\\);\")",
+      "Bash(node -e \"const e=require\\('./src/messages/fragments/users.en.json'\\); console.log\\(Object.keys\\(e\\)\\); console.log\\(JSON.stringify\\(e,null,1\\).slice\\(0,900\\)\\)\")"
     ]
   }
 }

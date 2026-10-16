@@ -5,6 +5,22 @@ import { z } from "zod";
  * the build, which is the intended outcome — every value here is a secret.
  */
 
+/**
+ * A `"1"`-or-nothing boolean flag.
+ *
+ * Deliberately not accepting `"true"`, `"yes"`, `"on"` or `"TRUE"`. Every one of
+ * those is a plausible thing for an operator to write, and each would then mean
+ * something subtly different from the documented value — which is how a flag
+ * ends up "set" in an `.env` file and still off in the running process. One
+ * accepted spelling, and everything else is off.
+ *
+ * Exported so `tests/admin.flag.test.ts` can assert that directly rather than
+ * through a memoised `env()`.
+ */
+export function flagEnabled(raw: string): boolean {
+  return raw === "1";
+}
+
 const schema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   REDIS_URL: z.string().min(1, "REDIS_URL is required"),
@@ -29,10 +45,7 @@ const schema = z.object({
 
   MATERIALIZE_HORIZON_HOURS: z.coerce.number().int().positive().max(720).default(72),
 
-  REQUIRE_PRODUCTION_CONFIG: z
-    .string()
-    .default("0")
-    .transform((v) => v === "1"),
+  REQUIRE_PRODUCTION_CONFIG: z.string().default("0").transform(flagEnabled),
 
   /**
    * Whether the worker may populate an EMPTY database with the synthetic demo
@@ -52,7 +65,32 @@ const schema = z.object({
   AUTO_SEED_DEMO: z
     .string()
     .default(() => (process.env.NODE_ENV === "production" ? "0" : "1"))
-    .transform((v) => v === "1"),
+    .transform(flagEnabled),
+
+  /**
+   * Whether `/admin` exists at all.
+   *
+   * Same derivation as `AUTO_SEED_DEMO`: on in development so the console needs
+   * no setup, off in production so a deployment does not expose an operations
+   * surface nobody asked for. A page that is switched off returns 404 — not a
+   * redirect, not a "forbidden" — so from outside it is indistinguishable from
+   * a route that was never deployed.
+   */
+  ENABLE_ADMIN: z
+    .string()
+    .default(() => (process.env.NODE_ENV === "production" ? "0" : "1"))
+    .transform(flagEnabled),
+
+  /**
+   * Bearer token for `/api/metrics`.
+   *
+   * Empty means DISABLED, and the endpoint answers 404 — the same fail-closed
+   * shape as `ENABLE_ADMIN`. A deployment that never sets this has no metrics
+   * endpoint rather than an unauthenticated one, so forgetting to configure it
+   * cannot turn into a public data leak. Prometheus sends this value; see
+   * `deploy/monitoring/prometheus.yml`.
+   */
+  METRICS_TOKEN: z.string().default(""),
 });
 
 export type Env = z.infer<typeof schema>;
