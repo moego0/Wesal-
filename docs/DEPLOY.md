@@ -3,10 +3,13 @@
 The whole stack — web, worker, Postgres, Redis, TLS — on one always-on Linux VM.
 No managed database, no paid tier, no domain.
 
-Budget target: **Oracle Cloud Always Free** (ARM Ampere A1, 2 OCPU / 12 GB). The
-sizing matters — the worker runs TypeScript through `tsx` rather than a compiled
-bundle, so it needs materially more memory than `next start`, and a 1 GB
-instance would need swap before it could even build the image.
+Budget target: **Oracle Cloud Always Free** (ARM Ampere A1). The allowance was
+4 OCPU / 24 GB and was reduced to roughly 2 OCPU / 12 GB — **check the current
+figure before you plan around it**, because Oracle has changed it before. Either
+way it comfortably exceeds what this stack needs; the sizing only matters
+because the worker runs TypeScript through `tsx` rather than a compiled bundle,
+so it needs materially more memory than `next start`, and a 1 GB instance would
+need swap before it could even build the image.
 
 > **Render was evaluated and rejected.** Its free tier cannot host this system,
 > and not marginally so:
@@ -76,7 +79,7 @@ Three things about this diagram are load-bearing:
 ### 1. Provision the VM
 
 Oracle Cloud → Compute → Instances → Create. Ubuntu, shape
-`VM.Standard.A1.Flex`, 2 OCPU / 12 GB.
+`VM.Standard.A1.Flex` (ARM), as much of the Always Free allowance as it offers.
 
 **Reserve the public IP** (Networking → Reserved public IPs, free) and attach it.
 Write it down; everything below depends on it.
@@ -93,11 +96,21 @@ TCP 80 and 443 from `0.0.0.0/0`. Leave port 22 alone.
 that blocks everything except SSH. The security list alone is not enough:
 
 ```bash
+# Insert ABOVE the catch-all REJECT rule, so check where that rule sits first:
+sudo iptables -L INPUT -n --line-numbers
+
 sudo iptables -I INPUT 6 -p tcp -m multiport --dports 80,443 -j ACCEPT
+
+# Persist. On Ubuntu this needs iptables-persistent installed:
+#   sudo apt-get install -y iptables-persistent
 sudo netfilter-persistent save
 ```
 
-Verify with `sudo iptables -L INPUT -n --line-numbers | head`.
+If the insert lands below the REJECT rule the traffic is still dropped, which is
+why the first command is there. On Oracle Linux images the persistence step is
+`sudo service iptables save` instead.
+
+Re-check with `sudo iptables -L INPUT -n --line-numbers | head`.
 
 ### 3. HTTPS without a domain
 
@@ -164,6 +177,12 @@ docker compose -f docker-compose.prod.yml up -d
 
 `web` and `worker` both wait on the one-shot `migrate` service exiting **zero**,
 so neither can start against an un-migrated schema.
+
+**Build on the VM**, as written above — do not build the image on your laptop and
+ship it. `VM.Standard.A1.Flex` is **ARM64**, and an image built on an x86 machine
+is x86. The result is `exec format error` on every container, which is at least a
+loud failure. Building on the box also means Prisma downloads the matching
+`linux-musl-arm64` query engine rather than a cross-arch one that cannot run.
 
 ### 7. Bootstrap the first pharmacy and admin
 
