@@ -20,7 +20,7 @@ COPY . .
 RUN npx prisma generate
 
 # Build Next.js app with build-time placeholder environment variables.
-# Real credentials will be provided by Render / host at runtime.
+# Real credentials are provided by the host at runtime, not baked in here.
 ENV NEXT_TELEMETRY_DISABLED=1 \
     DATABASE_URL="postgresql://build:build@localhost:5432/build" \
     REDIS_URL="redis://localhost:6379" \
@@ -48,16 +48,25 @@ COPY --from=builder /app/package.json      ./package.json
 COPY --from=builder /app/next.config.ts    ./next.config.ts
 COPY --from=builder /app/prisma.config.ts  ./prisma.config.ts
 COPY --from=builder /app/prisma            ./prisma
+COPY --from=builder /app/scripts           ./scripts
 COPY --from=builder /app/src               ./src
 COPY --from=builder /app/tsconfig.json     ./tsconfig.json
 
 USER nextjs
+
+# The builder ran `npm ci` as root, so /app/node_modules is root-owned. npx and
+# the Prisma CLI both want a writable cache, and the worker shells out to
+# `node_modules/.bin/prisma` at boot. Pointing HOME and the npm cache at
+# locations this user owns avoids an EACCES crash-loop that only appears in
+# production, where it is far more expensive to diagnose.
+ENV HOME=/home/nextjs \
+    npm_config_cache=/tmp/.npm
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Default: run the Next.js web server.
-# Override CMD in docker-compose / k8s to run the worker instead:
-#   command: ["node", "--dns-result-order=ipv4first", "node_modules/.bin/tsx", "src/worker/index.ts"]
+# Override the command in docker-compose to run the worker instead:
+#   command: ["npm", "run", "worker"]
 CMD ["npm", "run", "start"]

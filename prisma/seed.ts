@@ -239,6 +239,20 @@ async function wipeAuditLog(): Promise<void> {
 }
 
 async function main() {
+  // Refuse to run against production.
+  //
+  // The worker only calls this when AUTO_SEED_DEMO is on, but the seed is also
+  // reachable by hand — `npm run db:seed` on the server — and that would delete
+  // the patient database and publish the demo logins in the README. Two
+  // independent switches have to be wrong before any row is deleted.
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_DESTRUCTIVE_SEED !== "1") {
+    throw new Error(
+      "prisma/seed.ts deletes every row and creates public demo credentials; refusing to run " +
+        "with NODE_ENV=production. Set ALLOW_DESTRUCTIVE_SEED=1 to override, or use " +
+        "scripts/bootstrap-prod.ts for a first-time production setup.",
+    );
+  }
+
   console.log("Seeding synthetic data…\n");
 
   await wipeAuditLog();

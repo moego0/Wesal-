@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Wisal — TLS termination and reverse proxy.
+#
+# Caddy obtains and renews the certificate by itself, over HTTP-01 on port 80.
+# That is the whole reason a domain is affordable here: Let's Encrypt only ever
+# needed a name that resolves to this host, not a name anyone bought.
+#
+# `WISAL_DOMAIN` comes from .env. Two free options work, and swapping between
+# them is a one-line change:
+#
+#   DuckDNS    <sub>.duckdns.org      Needs an account + token, and the A record
+#                                     pointed at this VM. Worth the extra step
+#                                     because duckdns.org is on the Public
+#                                     Suffix List, so this name gets its OWN
+#                                     Let's Encrypt quota.
+#
+#   sslip.io   <ip-with-dashes>.sslip.io   No signup at all — the name is a pure
+#                                     function of the IP (203.0.113.10 becomes
+#                                     203-0-113-10.sslip.io). Use the dashed
+#                                     form, not the dotted one. Caveat: sslip.io
+#                                     is NOT on the Public Suffix List, so every
+#                                     user of it shares one Let's Encrypt quota.
+#                                     Issuance works, but a bad week for other
+#                                     people can fail yours.
+#
+# Either way, RESERVE the VM's public IP first. A stop/start that changes the IP
+# invalidates both the DNS name and the certificate's name at once.
+# ─────────────────────────────────────────────────────────────────────────────
+
+{
+	# Let's Encrypt uses this to warn you before a certificate expires. An empty
+	# value here is a Caddyfile parse error, so drop the line rather than leaving
+	# it blank.
+	email {$ACME_EMAIL}
+}
+
+{$WISAL_DOMAIN} {
+	encode zstd gzip
+
+	# Meta's webhook signature is an HMAC over the RAW request body, so nothing
+	# on this path may re-encode, reorder or buffer the request. `encode` only
+	# touches responses, and Caddy streams request bodies through by default.
+	# Do not add a request-body middleware here.
+	reverse_proxy web:3000
+
+	header {
+		# The webhook URL is HTTPS-only by construction once the certificate
+		# exists; this tells browsers never to try plain HTTP again.
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# There is no reason to advertise the proxy.
+		-Server
+	}
+
+	# Certificates and this log share the `wasal_caddy_data` volume, so the log
+	# survives a container recreate and is bounded.
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 3
+		}
+	}
+}

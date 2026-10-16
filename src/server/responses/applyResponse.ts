@@ -8,6 +8,7 @@ import type {
 } from "@/generated/prisma/enums";
 import { systemPrisma } from "@/server/db";
 import { problemCategoryLabel } from "@/server/messaging/menu";
+import { localDateOnly, localWallClock } from "@/lib/time";
 
 /**
  * Applying a patient response.
@@ -451,10 +452,11 @@ async function createSnoozeEvent(
 
   const schedule = await tx.medicationSchedule.findUnique({
     where: { id: event.scheduleId },
-    select: { responseWindowMinutes: true },
+    select: { responseWindowMinutes: true, revision: true, timeZone: true },
   });
 
   const windowMinutes = schedule?.responseWindowMinutes ?? 120;
+  const timeZone = schedule?.timeZone ?? "Africa/Cairo";
 
   try {
     const created = await tx.reminderEvent.create({
@@ -463,20 +465,20 @@ async function createSnoozeEvent(
         patientId: event.patientId,
         medicationId: event.medicationId,
         scheduleId: event.scheduleId,
-        scheduleRevisionSnapshot: 1,
+        // The LIVE revision, not a literal. `claimDueReminder` supersedes any
+        // event whose snapshot disagrees with the schedule's revision, and
+        // `revision` is bumped on every schedule edit — so a hardcoded 1 made
+        // every snooze on an edited schedule silently undeliverable.
+        scheduleRevisionSnapshot: schedule?.revision ?? 1,
         kind: "SNOOZE",
         parentEventId: event.id,
         doseAtUtc: snoozeAt,
-        doseLocalDate: new Date(
-          Date.UTC(
-            input.receivedAtUtc.getUTCFullYear(),
-            input.receivedAtUtc.getUTCMonth(),
-            input.receivedAtUtc.getUTCDate(),
-          ),
-        ),
-        doseLocalTime: `${String(input.receivedAtUtc.getUTCHours()).padStart(2, "0")}:${String(
-          input.receivedAtUtc.getUTCMinutes(),
-        ).padStart(2, "0")}`,
+        // The patient's local calendar day and wall clock, not UTC. These
+        // columns are documented as interpreted in the schedule's timeZone and
+        // are what adherence-by-time-of-day groups on, so UTC wall-clock
+        // shifted every snoozed dose by the offset (2–3 hours in Cairo).
+        doseLocalDate: localDateOnly(input.receivedAtUtc, timeZone),
+        doseLocalTime: localWallClock(input.receivedAtUtc, timeZone),
         responseWindowEndsAtUtc: new Date(snoozeAt.getTime() + windowMinutes * 60_000),
         // The dose is what gets scored. A nudge that nobody answers must not
         // read as a missed dose.

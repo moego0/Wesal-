@@ -254,6 +254,31 @@ export function minutesBetween(from: Date, next: Date | null | undefined): numbe
   return diff > 0 ? Math.floor(diff) : null;
 }
 
-export function startOfLocalDayUtc(instant: Date, zone: string): Date {
-  return DateTime.fromJSDate(instant, { zone }).startOf("day").toUTC().toJSDate();
+/**
+ * The patient's local calendar day, as a `Date` at UTC midnight.
+ *
+ * `ReminderEvent.doseLocalDate` is a `@db.Date` and is compared against values
+ * built this same way (`queries/dashboard.ts`, `scheduling/materialize.ts`), so
+ * what goes into the column has to be midnight UTC on the local date — not the
+ * instant at which the local day began, which is a different timestamp that
+ * falls on the previous UTC date for any positive offset. Storing the instant
+ * writes yesterday's date for every patient east of Greenwich.
+ */
+export function localDateOnly(instant: Date, zone: string): Date {
+  const iso = DateTime.fromJSDate(instant, { zone }).toISODate();
+  return new Date(`${iso ?? "1970-01-01"}T00:00:00.000Z`);
+}
+
+/**
+ * Local wall-clock "HH:mm" for an instant in `zone`.
+ *
+ * Build the string from Luxon's parts rather than a formatter. `ReminderEvent`
+ * has a database CHECK that rejects anything outside 00:00–23:59, and a
+ * formatter is capable of producing "24:00" for midnight depending on the ICU
+ * build — a string the constraint throws on, in the middle of the transaction
+ * that records a patient's reply.
+ */
+export function localWallClock(instant: Date, zone: string): string {
+  const dt = DateTime.fromJSDate(instant, { zone });
+  return `${String(dt.hour).padStart(2, "0")}:${String(dt.minute).padStart(2, "0")}`;
 }

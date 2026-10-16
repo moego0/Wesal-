@@ -50,6 +50,26 @@ import { enqueueSendReminder } from "@/server/queue";
 
 const HOST = hostname();
 
+/**
+ * How to invoke a locally installed CLI from this process.
+ *
+ * Every obvious spelling of this is broken in one of the two environments:
+ *
+ *   `npx prisma …`                  wants a writable npm cache. The container
+ *                                   runs as an unprivileged user over a
+ *                                   root-owned /app, which is an EACCES
+ *                                   crash-loop at boot.
+ *   `node_modules/.bin/tsx …`       the extensionless shim is a POSIX shell
+ *                                   script. Node cannot parse it on Windows.
+ *
+ * Going through `process.execPath` with the package's own entry point sidesteps
+ * both. The interpreter path is quoted because on Windows it is usually under
+ * "C:\Program Files\nodejs\", and an unquoted space there silently truncates
+ * the command.
+ */
+const NODE = `"${process.execPath}"`;
+const PRISMA_CLI = "node_modules/prisma/build/index.js";
+
 type SweepHandler = () => Promise<unknown>;
 
 /**
@@ -66,6 +86,12 @@ const SWEEPS: Record<SweepName, SweepHandler> = {
     }
     return { claimed: dispatchIds.length, skipped };
   },
+
+  // The webhook persists inbound messages and returns 200 without enqueueing,
+  // so nothing else ever drains them. `drainInbound` selects the unprocessed
+  // rows oldest-first and is idempotent on `processedAtUtc`, which is why this
+  // is safe to run on a timer and why losing a tick costs at most 15 seconds.
+  drainInbound: () => drainInbound(100),
 
   reconcileSending: () => reconcileSendingDispatches(),
 
@@ -185,25 +211,47 @@ async function main(): Promise<void> {
 
   console.log(`[worker] starting on ${HOST}, provider=${config.MESSAGING_PROVIDER}`);
 
-  // Automatically apply pending database migrations at boot
+  // ── apply pending migrations ──
+  //
+  // In development a failure here is a warning: the developer probably has a
+  // half-migrated local database and still wants the sweeps to run. In
+  // production it is fatal, because a `migrate deploy` that fails partway
+  // leaves the recorded migration set ahead of the actual schema, and every
+  // subsequent query then runs against a shape the code was not written for.
+  // The only symptom would be per-sweep errors in `SweepHeartbeat` — silent
+  // degradation while every container still reports healthy. Exiting instead
+  // lets `restart: unless-stopped` retry, which is what a transient Postgres
+  // blip during a rolling restart needs.
+  //
+  // Invoked through `NODE`/`PRISMA_CLI` rather than `npx` or a `.bin` shim —
+  // see the note on those constants for why both of the obvious spellings fail.
   try {
     console.log("[worker] applying pending database migrations...");
-    execSync("npx prisma migrate deploy", { stdio: "inherit" });
+    execSync(`${NODE} ${PRISMA_CLI} migrate deploy`, { stdio: "inherit" });
     console.log("[worker] database migrations up to date.");
   } catch (err) {
+    if (config.REQUIRE_PRODUCTION_CONFIG) throw err;
     console.warn("[worker] database migration notice:", err instanceof Error ? err.message : err);
   }
 
-  // If the database has no pharmacy records yet, auto-seed the initial pharmacy, admin, and rules
-  try {
-    const pharmacyCount = await systemPrisma.pharmacy.count();
-    if (pharmacyCount === 0) {
-      console.log("[worker] empty database detected, auto-seeding initial pharmacy...");
-      execSync("npx tsx prisma/seed.ts", { stdio: "inherit" });
-      console.log("[worker] database seeded successfully.");
+  // ── demo seed (opt-in) ──
+  //
+  // Off by default in production. `prisma/seed.ts` deletes every row and
+  // creates public demo credentials, so on a real deployment the first boot must
+  // never reach it; `scripts/bootstrap-prod.ts` does that job instead.
+  if (!config.AUTO_SEED_DEMO) {
+    console.log("[worker] AUTO_SEED_DEMO is off; skipping the demo seed.");
+  } else {
+    try {
+      const pharmacyCount = await systemPrisma.pharmacy.count();
+      if (pharmacyCount === 0) {
+        console.log("[worker] empty database detected, auto-seeding demo data...");
+        execSync(`${NODE} --import tsx prisma/seed.ts`, { stdio: "inherit" });
+        console.log("[worker] demo data seeded.");
+      }
+    } catch (err) {
+      console.warn("[worker] auto-seed notice:", err instanceof Error ? err.message : err);
     }
-  } catch (err) {
-    console.warn("[worker] auto-seed notice:", err instanceof Error ? err.message : err);
   }
 
   // The catalog lives in TypeScript, so the RuleDefinition rows are derived from
@@ -314,7 +362,7 @@ async function main(): Promise<void> {
   // `upsertJobScheduler` rather than `add({ repeat })`: it is idempotent on the
   // scheduler id, so restarting the worker updates the schedule in place.
   // Registering with `add` on every boot is how a queue quietly accumulates
-  // seven copies of every sweep.
+  // a second copy of every sweep.
   for (const sweep of Object.keys(SWEEPS) as SweepName[]) {
     await sweepsQueue.upsertJobScheduler(
       `sweep:${sweep}`,

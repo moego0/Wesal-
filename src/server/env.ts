@@ -33,6 +33,26 @@ const schema = z.object({
     .string()
     .default("0")
     .transform((v) => v === "1"),
+
+  /**
+   * Whether the worker may populate an EMPTY database with the synthetic demo
+   * dataset in `prisma/seed.ts`.
+   *
+   * That seed deletes every row in the database and creates the demo logins
+   * documented in the README, so running it against production would ship
+   * `pharmacist@wasal.demo` as a working admin on a public URL. The default is
+   * derived from the environment and is safe in both directions: on in
+   * development (where `npm run dev` relies on it), off in production (where
+   * `scripts/bootstrap-prod.ts` does the real first-run setup).
+   *
+   * A production database that is empty because the operator forgot the
+   * bootstrap will fail loudly at the login screen, which is the correct
+   * failure — the alternative is deleting the patient database on a restart.
+   */
+  AUTO_SEED_DEMO: z
+    .string()
+    .default(() => (process.env.NODE_ENV === "production" ? "0" : "1"))
+    .transform((v) => v === "1"),
 });
 
 export type Env = z.infer<typeof schema>;

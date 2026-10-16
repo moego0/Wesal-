@@ -1,7 +1,7 @@
 import type { MessageIntent, ResponseState } from "@/generated/prisma/enums";
 import { systemPrisma } from "@/server/db";
 import type { NormalizedInboundEvent } from "@/server/messaging/provider";
-import { parseButtonPayload } from "@/server/messaging/menu";
+import { parseButtonPayload, normalizeLabel } from "@/server/messaging/menu";
 import { normalizePhone } from "@/lib/phone";
 
 /**
@@ -72,10 +72,17 @@ export type Attribution =
  * decides.
  */
 export function classifyFreeText(text: string): MessageIntent {
-  const t = text.trim().toLowerCase();
+  // Normalise before matching, for the same reason `answerFromButtonLabel`
+  // does: a patient who types «خَدت» with a diacritic or «خــدت» with tatweel
+  // is saying the same thing as one who types «خدت». Without this the
+  // free-text path is stricter than the button-label path about what counts as
+  // the same sentence, which is backwards — free text is the noisier input.
+  const t = normalizeLabel(text).toLowerCase();
   if (!t) return "OTHER";
 
-  const has = (...keys: string[]) => keys.some((k) => t.includes(k));
+  // Keywords are normalised too, so the literals below keep matching when
+  // written with أ/إ/ة while the incoming text uses the other spelling.
+  const has = (...keys: string[]) => keys.some((k) => t.includes(normalizeLabel(k)));
 
   if (has("اوقف", "أوقف", "وقف", "الغاء", "إلغاء", "مش عايز", "مش عاوز", "stop", "unsubscribe")) {
     return "STOP";
@@ -89,7 +96,22 @@ export function classifyFreeText(text: string): MessageIntent {
   if (has("بعدين", "بعد شوية", "فكرني", "فكّرني", "later", "remind")) {
     return "REMIND_LATER";
   }
-  if (has("خدت", "اخدت", "أخدت", "taken", "took")) {
+  // Negation is tested BEFORE the affirmative keyword it contains. "مخدتش" and
+  // "مش خدت" both contain "خدت", so the TAKEN branch below would swallow them
+  // and a patient reporting a missed dose would be recorded as having taken it
+  // — the single worst direction this classifier can be wrong in.
+  if (
+    has(
+      "مش خدت", "مش اخدت", "ما خدت", "مخدتش", "مخدت", "لسه مخدتش", "لم اخد",
+      "not taken", "not take", "didn't take", "didn’t take", "did not take",
+      "havent taken", "haven't taken",
+    )
+  ) {
+    return "MISSED";
+  }
+  // "اخذت" and "تناولت" are the MSA spellings; the colloquial entries above
+  // only cover the د-forms ("أخذت" normalises to "اخذت").
+  if (has("خدت", "اخدت", "أخدت", "اخذت", "تناولت", "taken", "took")) {
     return "TAKEN";
   }
   if (has("نسيت", "فوّتت", "فوتت", "مخدتش", "missed", "forgot")) {

@@ -123,12 +123,30 @@ interface and is selected with `MESSAGING_PROVIDER=whatsapp_cloud`.
 | `npm run db:deploy` | Apply migrations in production (no prompts, no reset) |
 | `npm run db:reset` | Drop, re-migrate and re-seed |
 | `npm run db:seed` | Synthetic pharmacy, users, patients and schedules |
+| `npm run db:bootstrap` | **Production** first-run setup: pharmacy, admin, messaging channel. Idempotent, deletes nothing |
 | `npm run db:studio` | Prisma Studio |
 | `npm run i18n:merge` | Merge translation fragments into the catalogues (see below) |
 
 > Do not run `npm run build` while someone else is working in the tree. It writes to the same
 > `.next` directory the dev server is using, and one of you will get confusing errors. Run
 > `typecheck` and `test` for a fast signal instead.
+
+> `db:seed` and `db:bootstrap` are opposites. `db:seed` **deletes every row** and creates the
+> demo logins above; it refuses to run when `NODE_ENV=production`. `db:bootstrap` is what a real
+> deployment uses, and is safe to re-run.
+
+---
+
+## Deploying
+
+See **[docs/DEPLOY.md](docs/DEPLOY.md)** for the full runbook: one always-free Linux VM running
+the whole stack, TLS without owning a domain, the production bootstrap, and — most importantly —
+the verification steps.
+
+Worth knowing before you start: the failure mode of this system is **silence**. With no worker
+running, the web app still serves every screen, still accepts logins, and still returns 200 to
+Meta's webhook, while no reminder is ever sent and no error is ever logged. Deploying is not
+finished until `SweepHeartbeat` shows all eight sweeps running — DEPLOY.md has the query.
 
 ---
 
@@ -152,6 +170,7 @@ copy of every sweep:
 | Sweep | Every | What it does |
 |---|---|---|
 | `dispatchSweep` | 30s | Claims due doses and enqueues the sends |
+| `drainInbound` | 15s | Turns stored patient replies into responses |
 | `reconcileSending` | 60s | Resolves sends stuck in `SENDING` |
 | `expireStale` | 60s | Expires doses whose moment has passed |
 | `heartbeat` | 60s | Watchdog — flags any sweep that has gone quiet |

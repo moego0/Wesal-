@@ -1,0 +1,186 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Wisal — production deployment, whole stack on ONE host.
+#
+# This is a standalone file, not an overlay on docker-compose.yml, and that is
+# deliberate. docker-compose.yml is the zero-config local-dev entrypoint that
+# every developer runs; adding Caddy, TLS issuance and a secrets file to it
+# would make every dev machine try to bind :80/:443 and request real
+# certificates. More importantly, the dev file PUBLISHES postgres and redis on
+# the host (5433/6380), and an overlay cannot cleanly un-publish a port — you
+# have to override it with an empty list and hope nobody edits the base file.
+# Here the keys simply are not present.
+#
+#   docker compose -f docker-compose.prod.yml build          # once, or after a code change
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Requires a `.env` beside this file (and beside docker-compose.yml, so compose
+# finds it for ${...} interpolation). It is gitignored — see
+# .env.production.example. Never commit it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: wasal
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Shared by every container running our own image. Note there is no `build:`
+# here — the image is built once, by the `web` service, and the others reuse the
+# tag. That is why `build` must run before `up` (see the runbook).
+x-app: &app
+  image: wasal-app:latest
+  env_file: [.env]
+  logging: *logging
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: wasal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Arabic text sorts incorrectly under the default C collation, and this is
+      # only settable at initdb time — changing it later means dumping and
+      # reloading the database.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    # No `ports:`. Reachable as `postgres:5432` on the compose network only.
+    # On a public VM, publishing 5432 hands the patient database to the internet.
+    volumes:
+      - wasal_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    container_name: wasal-redis
+    restart: unless-stopped
+    # `noeviction` is not a default to be tuned. BullMQ keeps every repeatable
+    # job registration here; under an LRU policy they are silently evicted under
+    # memory pressure, every scheduled sweep disappears, and no reminder is ever
+    # sent again with nothing logged and no error raised. The cost is that a
+    # full Redis rejects writes instead of evicting — a loud failure, which is
+    # the one we want. Jobs are hints, and completed ones are pruned, so the
+    # ceiling is easy to live with.
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+    # No `ports:`. Reachable as `redis:6379` on the compose network only.
+    volumes:
+      - wasal_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  # One-shot migration runner. `web` and `worker` wait for it to EXIT ZERO, so
+  # neither can start against an un-migrated schema. That is stronger than the
+  # worker's own boot check, which exists for hosts that run the container by
+  # itself. A failed migration therefore means "nothing starts", which is
+  # correct: running sweeps against a schema the code was not written for shows
+  # up only as per-sweep errors, i.e. reminders quietly stop.
+  migrate:
+    <<: *app
+    container_name: wasal-migrate
+    restart: "no"
+    # `node <entry>` rather than `node_modules/.bin/prisma`: the .bin shims are
+    # POSIX shell scripts relying on a shebang, and invoking the package's own
+    # entry point through the interpreter is the same command on every platform.
+    command: ["node", "node_modules/prisma/build/index.js", "migrate", "deploy"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  web:
+    <<: *app
+    container_name: wasal-web
+    # The only service that builds. Everything above reuses wasal-app:latest.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start"]
+    # No `ports:`. Only Caddy is reachable from outside.
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      migrate:  { condition: service_completed_successfully }
+    healthcheck:
+      # The login page returns 200; a protected page would redirect here. Either
+      # is below 500, which is all this needs to distinguish "serving" from
+      # "crashed or still starting".
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/ar/login').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  worker:
+    <<: *app
+    container_name: wasal-worker
+    command: ["npm", "run", "worker"]
+    # One replica. BullMQ would distribute sweeps across two workers and each
+    # job would still run once, so a second replica is not incorrect — but it
+    # buys nothing at this load, and it puts two processes through the same boot
+    # sequence (migrate, ensureSystemRules) at the same time for no reason.
+    # Scale this deliberately, not by accident.
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      migrate:  { condition: service_completed_successfully }
+    healthcheck:
+      # The most valuable check in this file, because the failure it catches has
+      # no error attached to it. If Redis is unreachable the worker retries
+      # forever (`maxRetriesPerRequest: null`), never prints `ready`, never
+      # registers a sweep, and looks like a running container. The only
+      # externally visible trace is SweepHeartbeat going stale, which is what
+      # this queries. See scripts/worker-healthcheck.js.
+      test: ["CMD", "node", "scripts/worker-healthcheck.js"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: wasal-caddy
+    restart: unless-stopped
+    # The only service exposed to the internet.
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3; harmless if the network drops UDP
+    env_file: [.env]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and ACME account live here. Deleting this volume forces a
+      # re-issue, and Let's Encrypt's duplicate-certificate limit is the one
+      # that bites when you do that repeatedly.
+      - wasal_caddy_data:/data
+      - wasal_caddy_config:/config
+    depends_on:
+      web: { condition: service_started }
+    logging: *logging
+
+volumes:
+  wasal_pgdata:
+  wasal_redisdata:
+  wasal_caddy_data:
+  wasal_caddy_config:

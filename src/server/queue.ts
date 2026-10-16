@@ -91,6 +91,11 @@ export async function enqueueSendReminder(
  */
 export const SWEEP_INTERVALS_MS = {
   dispatchSweep: 30_000,
+  // Patient replies. The webhook persists and returns 200 without enqueueing —
+  // Meta's tolerance for a slow response is measured in seconds — so this sweep
+  // is the only thing that turns an `InboundMessage` into a `PatientResponse`.
+  // Stop it and every reply, including a STOP, is stored and ignored.
+  drainInbound: 15_000,
   reconcileSending: 60_000,
   expireStale: 60_000,
   settleNoResponse: 300_000,
