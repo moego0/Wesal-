@@ -14,7 +14,10 @@
       "Bash(curl -s -o /dev/null -w \"rxnav drugs:        %{time_total}s\\\\n\" --max-time 25 \"https://rxnav.nlm.nih.gov/REST/drugs.json?name=metformin\")",
       "WebFetch(domain:dailymed.nlm.nih.gov)",
       "Bash(node -e \"const en=require\\('./src/messages/en.json'\\); console.log\\('EN top-level keys:', Object.keys\\(en\\).join\\(', '\\)\\);\")",
-      "Bash(node -e \"const e=require\\('./src/messages/fragments/users.en.json'\\); console.log\\(Object.keys\\(e\\)\\); console.log\\(JSON.stringify\\(e,null,1\\).slice\\(0,900\\)\\)\")"
+      "Bash(node -e \"const e=require\\('./src/messages/fragments/users.en.json'\\); console.log\\(Object.keys\\(e\\)\\); console.log\\(JSON.stringify\\(e,null,1\\).slice\\(0,900\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const dir='src/messages/fragments';const files=fs.readdirSync\\(dir\\);const nss=[...new Set\\(files.filter\\(f=>f.endsWith\\('.json'\\)\\).map\\(f=>f.replace\\(/\\\\.\\(ar|en\\)\\\\.json$/,''\\)\\).filter\\(ns=>files.includes\\(ns+'.ar.json'\\)||files.includes\\(ns+'.en.json'\\)\\)\\)].sort\\(\\);const ar=JSON.parse\\(fs.readFileSync\\('src/messages/ar.json','utf8'\\)\\);const en=JSON.parse\\(fs.readFileSync\\('src/messages/en.json','utf8'\\)\\);for\\(const ns of nss\\){const fa=JSON.parse\\(fs.readFileSync\\(dir+'/'+ns+'.ar.json','utf8'\\)\\);const fe=JSON.parse\\(fs.readFileSync\\(dir+'/'+ns+'.en.json','utf8'\\)\\);const sameA=JSON.stringify\\(ar[ns]\\)===JSON.stringify\\(fa[ns]\\);const sameE=JSON.stringify\\(en[ns]\\)===JSON.stringify\\(fe[ns]\\);console.log\\(ns.padEnd\\(16\\),'ar:',sameA?'same':'DIFF','en:',sameE?'same':'DIFF'\\);}\")",
+      "Bash(node -e \"const fs=require\\('fs'\\);const en=JSON.parse\\(fs.readFileSync\\('src/messages/en.json','utf8'\\)\\);console.log\\(JSON.stringify\\(en.users.columns,null,2\\)\\);console.log\\(JSON.stringify\\(en.users.footnote\\)\\);\")"
     ]
   }
 }

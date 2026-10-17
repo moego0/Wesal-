@@ -25,6 +25,7 @@ import { requireSessionUser } from "@/server/auth/current-user";
 import { hasPermission, requirePermission } from "@/server/auth/rbac";
 import {
   countActiveAdmins,
+  countPatientsByCreator,
   listPharmacyMemberships,
   type MembershipRow,
 } from "@/server/queries/admin";
@@ -116,9 +117,10 @@ async function UsersBody({
     getTranslations({ locale, namespace: "roles" }),
   ]);
 
-  const [members, adminCount] = await Promise.all([
+  const [members, adminCount, patientCounts] = await Promise.all([
     listPharmacyMemberships(user.pharmacyId, user.userId),
     countActiveAdmins(user.pharmacyId),
+    countPatientsByCreator(user.pharmacyId),
   ]);
 
   const ok = one(raw.ok);
@@ -289,12 +291,23 @@ async function UsersBody({
             {t("subtitle", { count: formatNumber(locale, members.length) })}
           </p>
 
+          {/* Conditional: when the bucket is empty there is no discrepancy to explain. */}
+          {patientCounts.unassigned > 0 ? (
+            <Notice
+              tone="info"
+              title={t("unassignedPatients", {
+                count: formatNumber(locale, patientCounts.unassigned),
+              })}
+            />
+          ) : null}
+
           <Table>
             <thead>
               <tr>
                 <Th>{t("columns.name")}</Th>
                 <Th>{t("columns.email")}</Th>
                 <Th>{t("columns.role")}</Th>
+                <Th align="end">{t("columns.patients")}</Th>
                 <Th>{t("columns.lastLogin")}</Th>
                 <Th align="end">{t("columns.actions")}</Th>
               </tr>
@@ -305,6 +318,9 @@ async function UsersBody({
                   key={member.membershipId}
                   locale={locale}
                   member={member}
+                  /* Keyed by userId, not membershipId, and defaulted here so the
+                     formatter never receives `undefined` (which formats as NaN). */
+                  patientCount={patientCounts.byUserId.get(member.userId) ?? 0}
                   /* `adminCount === 1` and this row is an active admin means this
                      row IS the last one. Disabling is only a courtesy — the
                      action refuses it regardless, and the row would have to be
@@ -339,10 +355,12 @@ async function UsersBody({
 async function MemberRow({
   locale,
   member,
+  patientCount,
   soleAdmin,
 }: {
   locale: string;
   member: MembershipRow;
+  patientCount: number;
   soleAdmin: boolean;
 }) {
   const [t, tRoles] = await Promise.all([
@@ -431,6 +449,10 @@ async function MemberRow({
             </button>
           </form>
         )}
+      </Td>
+
+      <Td align="end" className="tabular-nums">
+        {formatNumber(locale, patientCount)}
       </Td>
 
       <Td className="text-xs text-slate-500 dark:text-slate-400">

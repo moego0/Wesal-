@@ -445,6 +445,50 @@ export async function countActiveAdmins(pharmacyId: string): Promise<number> {
   });
 }
 
+export type PatientCreatorCounts = {
+  /** userId → patients in this pharmacy created by that user. Zero-count users are absent. */
+  byUserId: Map<string, number>;
+  /** Patients in this pharmacy with no recorded creator (`createdByUserId IS NULL`). */
+  unassigned: number;
+};
+
+/**
+ * How many patients each colleague added, for the users table.
+ *
+ * `Patient.createdByUserId` is a plain scalar with no relation and no index, so
+ * one grouped scan is the cheapest honest answer — a per-member `count()` would
+ * be N+1 queries. The column is nullable, which is why the null group is
+ * reported separately instead of being dropped: those patients would otherwise
+ * vanish from a screen that looks like a complete roster.
+ *
+ * A patient whose creator no longer has a membership here is in neither bucket
+ * (the scalar is not a relation), so the UI must not claim the counts add up to
+ * the pharmacy's patient total.
+ *
+ * The guarded `prisma` client is used deliberately: the tenant guard accepts
+ * this call only because `where.pharmacyId` is top-level, and that requirement
+ * is part of the contract this function relies on.
+ */
+export async function countPatientsByCreator(
+  pharmacyId: string,
+): Promise<PatientCreatorCounts> {
+  const groups = await prisma.patient.groupBy({
+    by: ["createdByUserId"],
+    where: { pharmacyId },
+    _count: { _all: true },
+  });
+
+  const byUserId = new Map<string, number>();
+  let unassigned = 0;
+
+  for (const group of groups) {
+    if (group.createdByUserId === null) unassigned = group._count._all;
+    else byUserId.set(group.createdByUserId, group._count._all);
+  }
+
+  return { byUserId, unassigned };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Audit log
 // ─────────────────────────────────────────────────────────────────────────────

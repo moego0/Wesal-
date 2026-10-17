@@ -821,6 +821,7 @@
       "email": "Email",
       "phone": "Mobile",
       "role": "Role",
+      "patients": "Patients",
       "lastLogin": "Last login",
       "actions": "Actions"
     },
@@ -843,6 +844,7 @@
     "reactivate": "Reactivate",
     "adminCount": "{count} active admins",
     "adminCountWarning": "Only one active admin. Demoting or deactivating them is refused until another admin exists.",
+    "unassignedPatients": "{count} patients were added before the pharmacy began recording who added them; they are not counted under any user.",
     "reason": "Reason (optional)",
     "empty": "No users yet",
     "emptyHint": "Add the first colleague so someone else can sign in",
