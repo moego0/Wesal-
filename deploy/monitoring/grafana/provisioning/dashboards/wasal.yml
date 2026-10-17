@@ -1,0 +1,25 @@
+# Grafana dashboard provider.
+#
+# Dashboards are loaded from files under /etc/grafana/dashboards, which
+# docker-compose.monitoring.yml mounts read-only from this repo. They are not
+# imported by hand into the Grafana volume, and `allowUiUpdates: false` keeps it
+# that way: a hand-imported dashboard lives only in `wasal_grafana_data`, is lost
+# whenever that volume is recreated, and cannot be reviewed in a pull request.
+
+apiVersion: 1
+
+providers:
+  - name: wasal
+    orgId: 1
+    folder: Wisal
+    type: file
+    # Deleted in the UI? It comes back on the next sync. There is exactly one
+    # dashboard and it is the point of this container.
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards
+      # False: every JSON in the directory lands in the `Wisal` folder above
+      # rather than in a folder named after the directory.
+      foldersFromFilesStructure: false

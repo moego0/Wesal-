@@ -1,0 +1,81 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Wisal — Prometheus scrape configuration.
+#
+# Mounted read-only at /etc/prometheus/prometheus.yml by
+# docker-compose.monitoring.yml.
+#
+# ## Why the app is scraped by service name and not through the domain
+#
+# `deploy/Caddyfile` answers 404 for /api/metrics, so the endpoint is not
+# internet-reachable at all. Prometheus talks to `web:3000` directly over the
+# compose network, where that rule does not apply — the token remains the only
+# check, and it is now the only one that needs to be.
+#
+# ## Why the token is a file
+#
+# `credentials_file` rather than `credentials:`. This file is committed, and the
+# token is a secret; keeping the two in the same file is how a token ends up in
+# git history where revoking it is not enough. The file is chmod 600, gitignored,
+# and created by the operator — see docs/DEPLOY.md. A `?token=` query parameter
+# would be worse still: it lands in every access log along the way.
+# ─────────────────────────────────────────────────────────────────────────────
+
+global:
+  # 15 s matches the app's own collection cost (a handful of indexed counts) and
+  # is well under the 30 s of the fastest sweep, which is the thing most worth
+  # noticing. Going finer would not resolve anything the app does not already
+  # quantise to a sweep interval.
+  scrape_interval: 15s
+
+  # The alert rules read gauges the scrape just refreshed, so this does not need
+  # to outpace scrape_interval.
+  evaluation_interval: 15s
+
+  external_labels:
+    # Stamped onto every series. With one host this is decoration, but it means a
+    # second host later does not silently merge two different databases' counts
+    # into one graph.
+    instance: wasal
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  # The app: sweeps, queue depth, dispatch outcomes, and the nodejs_* set.
+  - job_name: wasal-web
+    metrics_path: /api/metrics
+    scheme: http
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/metrics_token
+    static_configs:
+      - targets: ["web:3000"]
+        labels:
+          service: web
+
+  # Caddy. This is where request latency and the true 5xx rate come from.
+  #
+  # The app cannot measure its own request latency honestly: Next 16 exposes
+  # `onRequestError` (errors only) and `register` (once, at boot), and no hook
+  # that sees a successful request end — see src/instrumentation.ts. Caddy
+  # terminates every request, so it measures the thing the app cannot, including
+  # requests that never reach it (TLS failures, 404s from the @metrics rule).
+  #
+  # The admin endpoint has NO authentication. It is safe here for exactly one
+  # reason: `admin :2019` in the Caddyfile listens on the compose network, and
+  # docker-compose.prod.yml publishes no port for it. Do not add one.
+  - job_name: caddy
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ["caddy:2019"]
+        labels:
+          service: caddy
+
+  # Prometheus scraping itself. Cheap, and it is the only way to tell "the app
+  # stopped" apart from "Prometheus stopped".
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          service: prometheus

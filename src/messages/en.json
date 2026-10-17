@@ -28,7 +28,8 @@
     "followUps": "Follow-ups",
     "messages": "Message log",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "operations": "Operations"
   },
   "roles": {
     "PHARMACY_ADMIN": "Pharmacy admin",
@@ -882,5 +883,111 @@
     "generic": "Generic",
     "brand": "Brand",
     "attribution": "Drug names from DailyMed and RxNorm — U.S. National Library of Medicine"
+  },
+  "admin": {
+    "title": "Operations",
+    "subtitle": "The machinery behind this pharmacy's reminders, and whether it is still running",
+    "nav": {
+      "label": "Settings sections",
+      "profile": "Pharmacy details",
+      "users": "Users",
+      "audit": "Audit log",
+      "operations": "Operations"
+    },
+    "health": {
+      "good": {
+        "title": "Every background job is running",
+        "body": "All scheduled jobs have reported in within their expected window."
+      },
+      "bad": {
+        "title": "Some background jobs have stopped",
+        "body": "{stale} of {total} jobs are overdue. A job that is overdue sends nothing and logs nothing, so reminders may have stopped going out."
+      }
+    },
+    "unrouted": {
+      "title": "Patient replies are not reaching a pharmacy",
+      "body": "{count} replies matched no messaging channel. Those patients tapped a button and nobody is seeing it. The usual cause is the channel's phone number id disagreeing with what Meta sends."
+    },
+    "sweeps": {
+      "title": "Background jobs",
+      "subtitle": "Each one reports in on a schedule. One that stops reports nothing at all.",
+      "sweep": "Job",
+      "status": "Status",
+      "age": "Last ran",
+      "duration": "Took",
+      "error": "Last error",
+      "never": "Never ran",
+      "stale": "Overdue",
+      "running": "On time",
+      "seconds": "{count}s ago",
+      "milliseconds": "{count} ms",
+      "noError": "—",
+      "names": {
+        "dispatchSweep": "Send due reminders",
+        "drainInbound": "Process patient replies",
+        "reconcileSending": "Resolve stuck sends",
+        "expireStale": "Expire missed doses",
+        "settleNoResponse": "Settle silent patients",
+        "materialize": "Build upcoming doses",
+        "rulesSweep": "Evaluate alert rules",
+        "heartbeat": "Watchdog"
+      }
+    },
+    "queues": {
+      "title": "Queue depth",
+      "subtitle": "Hints waiting to be picked up. The database, not Redis, holds the real state.",
+      "queue": "Queue",
+      "states": {
+        "wait": "Waiting",
+        "active": "Active",
+        "delayed": "Delayed",
+        "failed": "Failed",
+        "completed": "Completed"
+      },
+      "names": {
+        "send-reminder": "Reminder sends",
+        "drain-inbound": "Inbound replies",
+        "sweeps": "Scheduled jobs"
+      }
+    },
+    "pharmacy": {
+      "title": "This pharmacy",
+      "unrouted": "Replies with no pharmacy",
+      "unroutedHint": "A patient tapped and the message matched no channel",
+      "unprocessed": "Replies not yet processed",
+      "unprocessedHint": "Stored but not yet read — including any STOP",
+      "stuck": "Sends stuck mid-flight",
+      "stuckHint": "The worker died between contacting WhatsApp and recording the result",
+      "failed": "Failed in the last 24 hours"
+    },
+    "failures": {
+      "title": "Recent failed reminders",
+      "subtitle": "The last ten, newest first",
+      "empty": "No failed reminders",
+      "emptyHint": "Nothing this pharmacy sent has been rejected by WhatsApp.",
+      "when": "When",
+      "patient": "Number",
+      "code": "Code",
+      "message": "Message",
+      "unknownTime": "Unknown"
+    },
+    "channels": {
+      "title": "Sending numbers",
+      "subtitle": "Read-only. A channel's number is the key Meta's webhook routes by.",
+      "number": "Number",
+      "provider": "Provider",
+      "status": "Status",
+      "empty": "No number configured",
+      "emptyHint": "Run the bootstrap to create the messaging channel."
+    },
+    "templates": {
+      "title": "WhatsApp templates",
+      "subtitle": "Bookkeeping only — nothing reads this table when a reminder is sent.",
+      "name": "Name",
+      "language": "Language",
+      "templateStatus": "Status",
+      "empty": "No templates recorded",
+      "emptyHint": "Run the bootstrap to record the reminder template."
+    }
   }
 }

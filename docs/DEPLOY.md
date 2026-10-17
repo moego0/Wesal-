@@ -378,6 +378,130 @@ back. Create a second admin with the bootstrap, or update the hash directly.
 
 ---
 
+## Monitoring
+
+Prometheus and Grafana run as an **overlay** on the production stack, not as a
+separate one:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.monitoring.yml up -d
+```
+
+Always pass both files. The monitoring file alone is a different compose
+project: it would start Grafana with no app to graph and no network in common.
+
+Neither port is published beyond loopback — Prometheus on `127.0.0.1:9090`,
+Grafana on `127.0.0.1:3001`. Publishing them on `0.0.0.0` would put
+unauthenticated HTTP (Prometheus) on the internet, and Docker's port
+publishing bypasses the host's INPUT rules, so the Oracle firewall would not be
+a second line of defence. Reach them over a tunnel:
+
+```bash
+ssh -N -L 9090:127.0.0.1:9090 -L 3001:127.0.0.1:3001 deploy-host
+# locally:  http://localhost:9090   Prometheus, with alerts at /alerts
+#           http://localhost:3001   Grafana, password = GRAFANA_ADMIN_PASSWORD
+```
+
+**The scrape token.** Prometheus authenticates to `/api/metrics` with a bearer
+token read from `deploy/monitoring/metrics_token`. It is not in `.env` because
+Prometheus wants `credentials_file`, and everything in `.env` is interpolated
+into every container:
+
+```bash
+cd /opt/wasal
+openssl rand -hex 32 | sudo tee deploy/monitoring/metrics_token >/dev/null
+sudo chown 65534:65534 deploy/monitoring/metrics_token   # Prometheus runs as nobody
+sudo chmod 600 deploy/monitoring/metrics_token
+```
+
+Put the **same** value in `.env` as `METRICS_TOKEN`, then bring the stack up.
+The ownership line is not cosmetic: the official Prometheus image runs as uid
+65534, so a root-owned `600` file is unreadable to it, and the only symptom is a
+`wasal-web` target that never comes up.
+
+Create the file **before** the first `up` — otherwise Docker creates a
+directory at that path and the bind mount fails in a way that reads like a
+missing config.
+
+**Rotation** is the same commands again plus a restart of both sides: Prometheus
+re-reads the file on each scrape, but the app reads `METRICS_TOKEN` once, at
+boot.
+
+```bash
+# regenerate the file and update .env as above, then:
+docker compose -f docker-compose.prod.yml -f docker-compose.monitoring.yml up -d web prometheus
+```
+
+**What is scraped** — `deploy/monitoring/prometheus.yml`:
+
+| Job | Target | Why |
+|---|---|---|
+| `wasal-web` | `web:3000/api/metrics` | sweeps, queue depth, dispatch outcomes, `nodejs_*` |
+| `caddy` | `caddy:2019/metrics` | HTTP latency and the true 5xx rate |
+| `prometheus` | `localhost:9090` | separates "the app stopped" from "Prometheus stopped" |
+
+The app cannot measure its own request latency: Next 16 has no hook that sees a
+successful request finish (`onRequestError` fires only on errors, `register`
+once at boot). Caddy terminates every request, so p95 latency and the 5xx rate
+come from Caddy and include requests that never reached the app. That is a real
+limitation, not a detail to paper over.
+
+`/api/metrics` answers **404 at the edge** — the Caddyfile hides the path —
+while Prometheus reaches `web:3000` over the compose network, where the rule
+does not apply. The Caddy admin API (`admin :2019`) is unauthenticated; it is
+safe only because no compose file publishes that port. Never add one.
+
+**Alerts.** `deploy/monitoring/alerts.yml` ships no Alertmanager. Rules fire
+into `http://localhost:9090/alerts`, the dashboard's "Alerts firing" panel, and
+the `ALERTS` metric. That is deliberate: an alert nobody reads and an alert
+delivery path that silently broke are the same thing, and one container fewer
+is one failure fewer. Adding Alertmanager later changes only the consumer of
+these rules.
+
+| Alert | Means |
+|---|---|
+| `WasalSweepStale` | **reminders have stopped going out** — the failure nothing else reports |
+| `WasalSweepNeverRan` | the worker never completed a first tick; usually a fresh deployment, otherwise check `docker compose ps` |
+| `WasalRepliesNotDrained` | replies are stored and ignored, including **STOP** |
+| `WasalUnroutedReplies` | replies match no pharmacy — compare the channel row with Meta. Absolute count: it does not clear by itself after the fix |
+| `WasalDispatchFailures` | WhatsApp rejected sends; `/admin` shows the per-row error code that tells an expired token from a bad template |
+| `WasalQueueBacklog`, `WasalStuckSends` | sends are not completing; Redis holds hints only, so nothing is lost |
+| `WasalHttp5xx`, `WasalWebDown` | the edge or the process is failing |
+| `WasalMetricsCollectorFailing` | one collector failed; its metrics are missing, the rest still publish |
+
+**The dashboard** is provisioned from
+`deploy/monitoring/grafana/dashboards/wasal-ops.json`, not imported by hand.
+It shows sweep age and staleness, queue depth by state, failed sends, the
+pharmacy-scoped unrouted and stuck-send counts, errors by route file, edge p95
+latency and 5xx rate, event-loop lag and heap, and the firing alerts. Editing it
+in the browser is disabled — `allowUiUpdates: false` — because a hand-edited
+dashboard lives only in the Grafana volume and is lost on a rebuild. Change the
+JSON in the repo and let the 30-second sync pick it up.
+
+---
+
+## Scaling
+
+The target is one VM, and it should stay one VM until a threshold below is
+actually crossed. None of them is close.
+
+| Component | Becomes necessary when | On one box today |
+|---|---|---|
+| Load balancer | more than one VM, or blue/green deploys | Caddy already terminates TLS and proxies; a second LB is one more thing to patch |
+| A second `web` replica | one process cannot serve the request rate | web is stateless (signed cookie + Postgres), so this is easy later; Caddy would need explicit upstreams, since `reverse_proxy web:3000` resolves one address |
+| A second `worker` replica | **not as written** | every sweep would run concurrently — there is no leader election or per-sweep lock. A lock comes first, replicas second |
+| Redis HA (Sentinel/Cluster) | Redis stops being disposable | it is disposable: BullMQ holds hints, Postgres holds truth, and losing Redis costs a re-materialization, not data. Redis Cluster also wants 3+ nodes, more than this whole app |
+| Vault | several environments or teams, or an audit requirement on secret access | a handful of secrets in one `.env`. Vault needs unseal keys, an HA backend and its own backups — more operations than the application |
+| Managed Postgres | the database outgrows the VM, or point-in-time recovery is required | `pg_dump` on a timer, tested at least once |
+
+In practice the box runs out of **memory** before CPU: Next's build cache,
+Postgres, Redis, Prometheus and Grafana all compete for the same RAM. The two
+monitoring containers are capped at 512 MiB each for exactly that reason — a
+scrape storm must OOM the scraper, never the worker, whose death stops reminders
+without an error anywhere.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause |

@@ -32,10 +32,29 @@
 	# value here is a Caddyfile parse error, so drop the line rather than leaving
 	# it blank.
 	email {$ACME_EMAIL}
+
+	# Prometheus scrapes Caddy for the HTTP latency and 5xx series the app
+	# cannot measure itself (see src/instrumentation.ts). `metrics` enables
+	# /metrics on the admin API.
+	#
+	# `admin :2019` binds every interface INSIDE the container, not on the host:
+	# docker-compose.prod.yml publishes no port for 2019, so only containers on
+	# the `wasal_default` network can reach it. That is load-bearing — the admin
+	# API has NO authentication and can reconfigure Caddy. Do not add a
+	# `ports:` entry for 2019, in any compose file.
+	admin :2019
+	metrics
 }
 
 {$WISAL_DOMAIN} {
 	encode zstd gzip
+
+	# The metrics endpoint is for Prometheus, which scrapes `web:3000` over the
+	# compose network where this rule does not apply. It has no business being
+	# internet-reachable: hiding it means the bearer token is not the only
+	# barrier, and an unauthenticated 404 gives an attacker nothing to find.
+	@metrics path /api/metrics
+	respond @metrics 404
 
 	# Meta's webhook signature is an HMAC over the RAW request body, so nothing
 	# on this path may re-encode, reorder or buffer the request. `encode` only

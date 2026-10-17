@@ -39,6 +39,11 @@ yarn-error.log*
 !.env.example
 !.env.production.example
 
+# The Prometheus scrape token. It is the only credential in front of
+# /api/metrics, and it lives beside the compose file rather than in `.env`
+# because Prometheus reads it via `credentials_file`. See docs/DEPLOY.md.
+/deploy/monitoring/metrics_token
+
 # vercel
 .vercel
 

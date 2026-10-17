@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
+import { isAdminEnabled } from "@/server/admin/flag";
 import { logoutAction } from "@/server/auth/actions";
 import { requireSessionUser } from "@/server/auth/current-user";
 import { hasPermission, type Permission } from "@/server/auth/rbac";
@@ -15,9 +16,11 @@ import { LocaleSwitcher } from "./LocaleSwitcher";
  */
 
 const NAV_ITEMS: ReadonlyArray<{
-  key: "dashboard" | "patients" | "followUps" | "messages" | "reports" | "settings";
+  key: "dashboard" | "patients" | "followUps" | "messages" | "reports" | "settings" | "operations";
   href: string;
   permission?: Permission;
+  /** Also requires `ENABLE_ADMIN`. See the filter in `SessionBar`. */
+  adminOnly?: boolean;
 }> = [
   { key: "dashboard", href: "/" },
   { key: "patients", href: "/patients" },
@@ -33,6 +36,11 @@ const NAV_ITEMS: ReadonlyArray<{
   // the way in. A link to a page that will refuse them is a dead end dressed up
   // as navigation.
   { key: "settings", href: "/settings", permission: "settings:manage" },
+  // Operations is a superset of the same audience — `settings:manage` is held
+  // only by a pharmacy admin — but it is ALSO behind `ENABLE_ADMIN`, so it needs
+  // the flag too. A pharmacist admin on a deployment that never turned the
+  // console on would otherwise be shown a link that 404s.
+  { key: "operations", href: "/admin", permission: "settings:manage", adminOnly: true },
 ];
 
 export default async function AppLayout({
@@ -85,6 +93,12 @@ export default async function AppLayout({
  * `requireSessionUser` redirects to the login page when the cookie is missing,
  * expired, revoked, or the user has lost their last membership — so this
  * component has a user by the time it renders.
+ *
+ * `ENABLE_ADMIN` is read here, and specifically NOT in `AppLayout` above. This
+ * component is inside `<Suspense>` and already request-scoped, so the flag is
+ * resolved per request; `AppLayout` renders the static shell, into which a flag
+ * read under `cacheComponents` could be baked at build time — after which
+ * turning the console on would require a rebuild rather than a restart.
  */
 async function SessionBar({ locale }: { locale: string }) {
   const user = await requireSessionUser(locale);
@@ -95,7 +109,9 @@ async function SessionBar({ locale }: { locale: string }) {
   ]);
 
   const items = NAV_ITEMS.filter(
-    (item) => item.permission === undefined || hasPermission(user, item.permission),
+    (item) =>
+      (item.permission === undefined || hasPermission(user, item.permission)) &&
+      (item.adminOnly !== true || isAdminEnabled()),
   );
 
   return (

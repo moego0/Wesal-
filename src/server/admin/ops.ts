@@ -47,7 +47,15 @@ export type SweepStatus = {
   lastError: string | null;
   /** Past its watchdog threshold. A sweep that never ran counts as stale. */
   stale: boolean;
-  /** Milliseconds past the threshold; -1 when it never ran. */
+  /**
+   * Milliseconds past the threshold, and **-1 only when it never ran**.
+   *
+   * Clamped at zero rather than left negative, so `-1` unambiguously means "no
+   * heartbeat". Without the clamp a healthy sweep sitting one millisecond inside
+   * its threshold also reports `-1`, which is the same value as "has never run" —
+   * two opposite conditions sharing a sentinel, which is the kind of thing a
+   * later reader trusts and gets wrong.
+   */
   overdueByMs: number;
 };
 
@@ -99,7 +107,9 @@ export function deriveSweepStatus(
 
     const ageMs = now - row.lastRunAtUtc.getTime();
     const exempt = sweep === "heartbeat";
-    const overdueByMs = exempt ? Number.NEGATIVE_INFINITY : ageMs - staleAfterMs(sweep);
+    // Zero for an exempt sweep and zero for any sweep inside its threshold, so
+    // the value is "how late", never "how early".
+    const overdueByMs = exempt ? 0 : Math.max(0, ageMs - staleAfterMs(sweep));
 
     return {
       sweep,
@@ -110,7 +120,7 @@ export function deriveSweepStatus(
       lastDurationMs: row.lastDurationMs,
       lastError: row.lastError,
       stale: overdueByMs > 0,
-      overdueByMs: Number.isFinite(overdueByMs) ? overdueByMs : 0,
+      overdueByMs,
     };
   });
 }
@@ -154,8 +164,19 @@ function metricsRedis(): IORedis {
   }));
 }
 
-/** Bounded on purpose: `getJobCounts()` also returns states this does not use. */
-const JOB_STATES = ["wait", "active", "delayed", "failed", "completed", "paused"] as const;
+/**
+ * The states asked of BullMQ, and the only ones the console shows.
+ *
+ * `paused` is deliberately absent, and it is not an oversight. BullMQ 5 made a
+ * paused queue a queue-level flag rather than a job list, so `paused` is not a
+ * `JobType` in v6 and `getJobCounts("paused")` does not typecheck. Nothing in
+ * this codebase calls `queue.pause()`, so there is no paused state to report
+ * and a column that could only ever read 0 would be worse than no column.
+ *
+ * `prioritized` and `waiting-children` are likewise omitted: this app adds no
+ * prioritized jobs and uses no flows, so both would be permanent zeros.
+ */
+const JOB_STATES = ["wait", "active", "delayed", "failed", "completed"] as const;
 
 export type QueueDepth = { queue: string; state: string; count: number };
 
@@ -365,4 +386,32 @@ export async function getPharmacyOps(pharmacyId: string): Promise<PharmacyOps> {
     ]);
 
   return { unrouted, unprocessed, attemptingOverdue, failedLast24h, recentFailures };
+}
+
+/**
+ * This pharmacy's template records.
+ *
+ * `WhatsAppTemplate` is NOT in the tenant guard's model list in `@/server/db` —
+ * it has a nullable `pharmacyId` and was left out alongside the identity models
+ * — so unlike the clinical models, a missing filter here is a silent cross-tenant
+ * read rather than a thrown error. The `where` is therefore the only thing
+ * scoping this, and it is written out for that reason.
+ *
+ * A null `pharmacyId` is a shared template not owned by anyone, so it is
+ * deliberately excluded: showing another tenant's row would be the leak this
+ * filter exists to prevent.
+ */
+export async function listPharmacyTemplates(pharmacyId: string) {
+  return prisma.whatsAppTemplate.findMany({
+    where: { pharmacyId },
+    orderBy: [{ providerName: "asc" }, { languageCode: "asc" }],
+    select: {
+      id: true,
+      providerName: true,
+      languageCode: true,
+      category: true,
+      status: true,
+      lastSyncedAtUtc: true,
+    },
+  });
 }

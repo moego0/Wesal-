@@ -1,0 +1,121 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Wisal — monitoring overlay.
+#
+# Applied ON TOP of the production file, never alone:
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.monitoring.yml up -d
+#
+# `name: wasal` matches the prod file, so these services join the same compose
+# network (`wasal_default`) and can reach `web:3000` and `caddy:2019` by service
+# name. Nothing in the prod file changes; compose merges the two.
+#
+# Deliberately NOT an overlay on docker-compose.yml. That file is the zero-config
+# local-dev entrypoint every developer runs, and it publishes Postgres and Redis
+# on the host. Adding two more containers, a disk-filling time-series database
+# and a secrets file to it would make `npm run dev` heavier for nobody's benefit:
+# locally, `/admin` already shows every number Prometheus would collect.
+#
+# ## Neither service is reachable from the internet
+#
+# Both publish on 127.0.0.1 only, and neither is referenced by the Caddyfile —
+# so there is no route to them through the domain either. The loopback binding
+# matters because a `ports:` entry without a host IP binds 0.0.0.0, and Docker's
+# port publishing bypasses the host firewall on a stock install: `iptables` rules
+# for INPUT do not apply to the FORWARD chain that DNAT creates. Reach them over
+# an SSH tunnel instead:
+#
+#   ssh -N -L 9090:127.0.0.1:9090 -L 3001:127.0.0.1:3001 deploy-host
+#   # then http://localhost:9090 and http://localhost:3001
+#
+# ## The memory caps are load-bearing
+#
+# `mem_limit` on both is not tidiness. The failure this guards against is a
+# scrape storm or a runaway query making Prometheus greedy on a small ARM VM and
+# the kernel reaching for the nearest large process — which can be the WORKER.
+# The worker's death stops every reminder and, for the send sweeps, does it
+# silently. Capping the observers keeps the observed process alive; if they need
+# more, they fail loudly on their own.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: wasal
+
+x-monitoring-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  prometheus:
+    # Major-pinned, matching postgres:17-alpine / redis:7-alpine / caddy:2-alpine
+    # in the prod file rather than an exact patch. A monitor that breaks on a
+    # routine `docker compose pull` is worse than one that is a month behind.
+    image: prom/prometheus:v3
+    container_name: wasal-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      # 15 days of history is enough to explain "when did this start" for a
+      # pharmacy that reports a problem on a Monday about last week, and 2 GB
+      # keeps the whole stack inside a free VM's disk. Prometheus applies
+      # whichever limit is hit first.
+      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.size=2GB
+      # The /-/ready and /-/healthy endpoints answer without touching the TSDB;
+      # without this the container has no health signal at all.
+      - --web.enable-lifecycle
+    ports:
+      # Loopback only. See the header.
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      # The scrape token. A FILE, not an inline `credentials:` and not a
+      # `?token=` query parameter:
+      #   - inline puts the token in this file, which is in git;
+      #   - a query parameter writes it into Caddy's access log and into
+      #     Prometheus's own logs, in plaintext, forever.
+      # Must be chmod 600 and NEVER committed — `.gitignore` covers it. See
+      # docs/DEPLOY.md for the two commands that create it.
+      - ./deploy/monitoring/metrics_token:/etc/prometheus/metrics_token:ro
+      - wasal_prom_data:/prometheus
+    mem_limit: 512m
+    logging: *logging
+    depends_on:
+      web: { condition: service_started }
+
+  grafana:
+    image: grafana/grafana:13
+    container_name: wasal-grafana
+    restart: unless-stopped
+    environment:
+      # `:?` is not decoration: compose REFUSES to start when the variable is
+      # unset, which is the only thing standing between a fresh deploy and
+      # Grafana booting on its well-known admin/admin default.
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      # One operator, provisioned dashboards. There is no reason for a second
+      # account and no reason for a sign-up page.
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      # Dashboards and the datasource come from these files, not from the UI
+      # volume. A dashboard imported by hand lives only in `wasal_grafana_data`,
+      # is lost when that volume is recreated, and cannot be reviewed in a PR.
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    ports:
+      # Loopback only. Grafana listens on 3000 inside its own container; 3001 on
+      # the host avoids colliding with `web`, which is 3000 in its own.
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+      - wasal_grafana_data:/var/lib/grafana
+    mem_limit: 512m
+    logging: *logging
+    depends_on:
+      prometheus: { condition: service_started }
+
+volumes:
+  wasal_prom_data:
+  wasal_grafana_data:

@@ -1,0 +1,193 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Wisal — Prometheus alert rules.
+#
+# Prometheus evaluates these but does not send them anywhere on its own: there is
+# no Alertmanager in this stack, so firing alerts appear at
+#
+#   http://localhost:9090/alerts        (over the SSH tunnel)
+#
+# and on the Grafana "Alerts firing" panel. That is deliberate. Wiring an
+# Alertmanager means another container, a notification credential, and a
+# delivery path that is silent when it breaks — which is the same failure mode as
+# the thing it is meant to report. For one pharmacy and one operator, a panel
+# someone opens is honest; email nobody reads is not. Adding Alertmanager later
+# changes only this file's consumer, not these rules.
+#
+# ## What is worth waking up for
+#
+# Every rule below describes a failure that is otherwise SILENT. A stale sweep is
+# the important one: the app keeps answering 200, the dashboard keeps loading,
+# and the only symptom is that reminders stop arriving — which nobody notices
+# until a patient mentions it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+groups:
+  - name: wasal-critical
+    rules:
+      # The process is gone or wedged. Everything else is downstream of this.
+      - alert: WasalWebDown
+        expr: up{job="wasal-web"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Wisal web is not answering scrapes"
+          description: >-
+            `up` for the wasal-web job has been 0 for two minutes. Either the
+            container is not running, or it is running and the metrics endpoint
+            is rejecting Prometheus — check `docker compose ps` first, then the
+            token in deploy/monitoring/metrics_token against METRICS_TOKEN in
+            .env. Remember both are restart-scoped.
+
+      # The single most important signal in this whole stack. A sweep that stops
+      # does not error, does not log, and does not make the app unhealthy; it
+      # simply stops. Reminders then stop, and nothing anywhere says so.
+      - alert: WasalSweepStale
+        expr: wasal_sweep_stale{sweep!="heartbeat"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Wisal sweep {{ $labels.sweep }} has stopped running"
+          description: >-
+            The {{ $labels.sweep }} sweep has not reported within three of its
+            intervals plus a grace period. Check the worker: `docker compose logs
+            worker --tail=100`. A worker whose Redis connection never became
+            ready retries forever and looks perfectly healthy from outside; the
+            `wasal-worker` healthcheck (scripts/worker-healthcheck.js) is built to
+            catch exactly that.
+
+      # The fresh-deployment case, and the after-a-restore case. Reported rather
+      # than treated as healthy: a table full of zeroes on a system that has
+      # never run is the most misleading state a health panel can be in. The
+      # 15-minute `for` gives the sweeps time to make their first pass.
+      - alert: WasalSweepNeverRan
+        expr: wasal_sweep_last_run_age_seconds < 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Wisal sweep {{ $labels.sweep }} has never run"
+          description: >-
+            This sweep has recorded no heartbeat at all. On a deployment that was
+            just started, check that the worker container is up and that
+            migrations completed (`docker compose ps migrate`). On a deployment
+            that has been running, the worker has been restarted into a state
+            where it never reached its first tick.
+
+  - name: wasal-degraded
+    rules:
+      # A reply the webhook stored but nothing has consumed. STOP lands here too,
+      # which means a patient who asked to stop is still being messaged.
+      - alert: WasalRepliesNotDrained
+        expr: wasal_inbound_unprocessed > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Patient replies are not being processed"
+          description: >-
+            {{ $value }} inbound message(s) have been sitting unprocessed for ten
+            minutes. The drainInbound sweep is the only thing that turns an
+            InboundMessage into a PatientResponse, so a STOP is stored and
+            ignored while this is true. Check `wasal_sweep_stale{sweep=
+            "drainInbound"}` and the worker logs.
+
+      # A different failure from the one above, with a different cause: the drain
+      # may be perfectly healthy and still never see these, because the message
+      # matched no MessagingChannel. The patient tapped and nobody is looking.
+      - alert: WasalUnroutedReplies
+        expr: wasal_inbound_unrouted > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Patient replies are matching no pharmacy"
+          description: >-
+            {{ $value }} inbound message(s) resolved to no messaging channel.
+            The usual cause is MessagingChannel.providerPhoneNumberId disagreeing
+            with the `metadata.phone_number_id` Meta sends. Compare them in
+            /admin, under "Sending numbers", against the Meta dashboard.
+            Note this is an absolute count, so it does NOT clear by itself when
+            the channel is fixed: the rows already stored stay UNROUTED. It
+            clears when every one of them has been resolved.
+
+      # The reconciler's own backlog: a worker died between contacting WhatsApp
+      # and recording the result. Usually self-heals within one reconcile
+      # interval; if it does not, sends are not completing.
+      - alert: WasalStuckSends
+        expr: wasal_dispatch_attempting_overdue > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} reminder send(s) are stuck mid-flight"
+          description: >-
+            Dispatches have been ATTEMPTING past their reconcile deadline for ten
+            minutes. The reconcileSending sweep should have resolved them; if it
+            has, this is a backlog draining, and if it has not, check that sweep's
+            heartbeat. Some of these may have reached the patient.
+
+      - alert: WasalDispatchFailures
+        expr: wasal_dispatch_failed_recent{window="1h"} > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} reminder(s) failed to send in the last hour"
+          description: >-
+            WhatsApp rejected these. An expired access token and a rejected
+            template look identical in the count; /admin shows the provider error
+            code for each, which is what distinguishes them. A 24-hour token that
+            lapsed is the most common cause and looks exactly like a
+            deliverability outage.
+
+      # A consumer that stopped while the producer kept producing. Redis is only
+      # ever a hint in this system, so a backlog is not data loss — but it means
+      # sends are not going out.
+      - alert: WasalQueueBacklog
+        expr: wasal_queue_jobs{state="wait"} > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Queue {{ $labels.queue }} has a growing backlog"
+          description: >-
+            {{ $value }} jobs are waiting on {{ $labels.queue }}. BullMQ holds
+            only hints — Postgres holds the truth — so nothing is lost, but the
+            consumer is not keeping up. Compare with `wasal_sweep_stale`: if the
+            relevant sweep is healthy and this is not draining, the worker is
+            alive but its consumers are not.
+
+      # Relayed rather than hidden: a collector that fails leaves a hole in the
+      # other metrics, and this is the only trace it leaves behind.
+      - alert: WasalMetricsCollectorFailing
+        expr: wasal_metrics_collector_error == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The {{ $labels.collector }} metrics collector is failing"
+          description: >-
+            This collector has failed for ten minutes, so its metrics are missing
+            values. The others are still publishing — the isolation is working as
+            designed, and this alert is the cost of it. Check the web container
+            logs for `[metrics] collector ... failed`.
+
+  - name: wasal-edge
+    rules:
+      # Caddy's request counter carries no status code, so the 5xx share comes
+      # from the duration histogram's `_count` series, which does. Measured at the
+      # edge on purpose: this includes requests that never reached the app.
+      - alert: WasalHttp5xx
+        expr: sum(rate(caddy_http_request_duration_seconds_count{code=~"5.."}[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Wisal is returning 5xx responses"
+          description: >-
+            More than one 5xx every twenty seconds for ten minutes, counted at
+            Caddy. The app's own error counter
+            (wasal_http_request_errors_total) is labelled by route file and says
+            WHERE; this says that it is still happening.

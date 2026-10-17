@@ -209,6 +209,9 @@ stops a `read` receipt that arrives *after* an answer from clobbering the answer
 | `src/server/responses/` | Attribution and response application |
 | `src/server/rules/` | The rule catalogue and its evaluator |
 | `src/server/messaging/` | The provider interface and both adapters |
+| `src/server/metrics/` | Prometheus registry, scrape-time collectors, bearer auth |
+| `src/app/[locale]/(app)/admin/` | Read-only ops console, behind `ENABLE_ADMIN` and `settings:manage` |
+| `deploy/monitoring/` | Prometheus rules, scrape config, Grafana provisioning |
 | `src/worker/index.ts` | Registers every sweep on boot |
 | `src/messages/` | Translation catalogues (`ar.json`, `en.json`) |
 

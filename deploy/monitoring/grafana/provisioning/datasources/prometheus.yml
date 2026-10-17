@@ -1,0 +1,25 @@
+# Grafana datasource, provisioned from file.
+#
+# `uid: prometheus` is fixed rather than generated. The dashboard JSON in
+# ../dashboards references it by that string, and a provisioned dashboard whose
+# datasource UID does not resolve renders every panel as "Datasource not found" —
+# a dashboard that looks present and is entirely empty.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    # Compose service name, on the shared `wasal_default` network.
+    url: http://prometheus:9090
+    isDefault: true
+    # Read-only in the UI: the file is the source of truth, so an edit made in
+    # the browser is lost on the next restart and misleads whoever made it.
+    editable: false
+    jsonData:
+      # Narrow the grafana-managed alerting UX to the same resolution the scraper
+      # uses, so a Grafana-side alert cannot be configured to see detail that was
+      # never collected.
+      timeInterval: 15s
