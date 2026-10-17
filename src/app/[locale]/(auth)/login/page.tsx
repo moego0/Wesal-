@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getSessionUser } from "@/server/auth/current-user";
@@ -39,12 +40,21 @@ export default async function LoginPage({ params }: LoginPageProps) {
     <main className="flex flex-1 items-center justify-center px-4 py-12 font-sans">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <span
-            aria-hidden
-            className="mx-auto mb-3 grid size-11 place-items-center rounded-xl bg-teal-600 text-xl font-semibold text-white"
-          >
-            و
-          </span>
+          {/*
+            The full lockup on its own white plate: its navy wordmark is
+            unreadable directly on the dark theme's background. Decorative —
+            the page subtitle already names the app.
+          */}
+          <div className="mx-auto mb-4 w-44 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700">
+            <Image
+              src="/brand/wisal-logo.png"
+              alt=""
+              width={640}
+              height={665}
+              className="h-auto w-full"
+              priority
+            />
+          </div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
             {t("title")}
           </h1>

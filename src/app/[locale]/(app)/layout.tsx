@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import Image from "next/image";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
 import { isAdminEnabled } from "@/server/admin/flag";
@@ -61,11 +62,20 @@ export default async function AppLayout({
             href="/"
             className="flex items-center gap-2.5 rounded-lg focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:outline-none"
           >
-            <span
-              aria-hidden
-              className="grid size-8 place-items-center rounded-lg bg-teal-600 text-sm font-semibold text-white"
-            >
-              و
+            <span className="grid h-8 place-items-center rounded-lg bg-white px-1.5 dark:ring-1 dark:ring-slate-700">
+              {/*
+                The logo's navy would disappear into the dark header, so the
+                mark keeps its own white tile in both themes. Decorative: the
+                pharmacy name beside it is the accessible label.
+              */}
+              <Image
+                src="/brand/wisal-mark-wide.png"
+                alt=""
+                width={480}
+                height={268}
+                className="h-6 w-auto"
+                priority
+              />
             </span>
             <span className="text-base font-semibold text-slate-900 dark:text-slate-50">
               {t("appName")}
