@@ -489,6 +489,60 @@ export async function countPatientsByCreator(
   return { byUserId, unassigned };
 }
 
+export type PharmacySummary = {
+  name: string;
+  /** Active memberships with the manager role. */
+  managers: number;
+  /** Active memberships with the doctor (PHARMACIST) role. */
+  doctors: number;
+  /** Active memberships in any other role. */
+  otherStaff: number;
+  /** Every patient record in this pharmacy, archived ones included — the same
+   *  population the patient list and the users screen count. */
+  patients: number;
+};
+
+/**
+ * The few numbers a manager is promised at a glance: the pharmacy's own name,
+ * how many managers and doctors it has, and how many patients it carries.
+ *
+ * One query per fact, all scoped by the session's pharmacy id. This is a
+ * summary, not an analytics screen — the patient list and the users table are
+ * the places to look for the rows behind these counts.
+ */
+export async function getPharmacySummary(
+  pharmacyId: string,
+): Promise<PharmacySummary | null> {
+  const [pharmacy, roles, patients] = await Promise.all([
+    prisma.pharmacy.findFirst({
+      where: { id: pharmacyId },
+      select: { name: true },
+    }),
+    prisma.pharmacyMembership.groupBy({
+      by: ["role"],
+      where: { pharmacyId, active: true },
+      _count: { _all: true },
+    }),
+    prisma.patient.count({ where: { pharmacyId } }),
+  ]);
+
+  if (!pharmacy) return null;
+
+  const count = (role: string) =>
+    roles.find((row) => row.role === role)?._count._all ?? 0;
+
+  const managers = count("PHARMACY_ADMIN");
+  const doctors = count("PHARMACIST");
+
+  return {
+    name: pharmacy.name,
+    managers,
+    doctors,
+    otherStaff: roles.reduce((sum, row) => sum + row._count._all, 0) - managers - doctors,
+    patients,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Audit log
 // ─────────────────────────────────────────────────────────────────────────────
@@ -753,6 +807,9 @@ type Tx = Omit<
   typeof prisma,
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends" | "$use"
 >;
+
+/** The transaction handle the membership mutations accept. */
+export type AdminTx = Tx;
 
 /**
  * `RuleDefinition.params` and friends are Prisma `Json` inputs, which the
@@ -1187,10 +1244,18 @@ const inviteSchema = z.object({
   initialPassword: z.string().min(10).max(200).optional(),
 });
 
-export async function invitePharmacyMember(
-  actor: AdminActor,
+export type InviteInput = z.infer<typeof inviteSchema>;
+
+/**
+ * Validate an invitation payload before anything touches the database.
+ *
+ * Exported so the platform console parses manager/doctor accounts through the
+ * same rules as the in-pharmacy form; a second schema would be a second answer
+ * to "what is a valid staff account".
+ */
+export function parseInviteInput(
   input: Record<string, unknown>,
-): Promise<AdminMutationResult> {
+): { ok: true; data: InviteInput } | { ok: false; code: AdminRefusalCode; detail?: string } {
   const parsed = inviteSchema.safeParse({
     email: input.email,
     fullName: input.fullName,
@@ -1210,70 +1275,98 @@ export async function invitePharmacyMember(
     return { ok: false, code: "INVALID_INPUT", detail: field };
   }
 
-  const { email, fullName, role, phoneE164, initialPassword } = parsed.data;
+  return { ok: true, data: parsed.data };
+}
 
-  const passwordHash = initialPassword ? await hashPassword(initialPassword) : null;
+/**
+ * Create (or attach) a global `User` and add them to `actor.pharmacyId`.
+ *
+ * Split out of `invitePharmacyMember` so the platform console can run the same
+ * writes inside the transaction that creates a new pharmacy, with the actor's
+ * `pharmacyId` set to that new row. `passwordHash` is hashed by the caller,
+ * BEFORE the transaction: scrypt is deliberately slow and holding row locks
+ * through it would serialise unrelated admin work.
+ */
+export async function invitePharmacyMemberTx(
+  tx: Tx,
+  actor: AdminActor,
+  input: InviteInput,
+  passwordHash: string | null,
+): Promise<AdminMutationResult> {
+  const { email, fullName, role, phoneE164 } = input;
 
-  const outcome = await prisma.$transaction(async (tx) => {
-    const existing = await tx.user.findUnique({
-      where: { email },
-      select: { id: true, passwordHash: true, status: true },
-    });
-
-    if (existing) {
-      const alreadyMember = await tx.pharmacyMembership.findFirst({
-        where: { pharmacyId: actor.pharmacyId, userId: existing.id },
-        select: { id: true },
-      });
-      if (alreadyMember) return { ok: false, code: "EMAIL_TAKEN" } as const;
-    }
-
-    // A `User` is a GLOBAL identity — one person, two pharmacies. When the
-    // address already exists the membership is attached to it rather than a
-    // second account being invented; `User.email` is unique, so the alternative
-    // is an error that strands a real colleague with no way in.
-    const userId = existing
-      ? existing.id
-      : (
-          await tx.user.create({
-            data: {
-              email,
-              fullName,
-              phoneE164: phoneE164 ?? null,
-              status: passwordHash ? "ACTIVE" : "INVITED",
-              passwordHash,
-              passwordAlgo: passwordHash ? PASSWORD_ALGO : null,
-            },
-            select: { id: true },
-          })
-        ).id;
-
-    // Fills in a missing password for an existing account that has never been
-    // able to sign in. Never overwrites one that works.
-    if (existing && passwordHash && !existing.passwordHash) {
-      await tx.user.update({
-        where: { id: userId },
-        data: { passwordHash, passwordAlgo: PASSWORD_ALGO, status: "ACTIVE" },
-      });
-    }
-
-    const membership = await tx.pharmacyMembership.create({
-      data: { userId, pharmacyId: actor.pharmacyId, role, active: true },
-      select: { id: true },
-    });
-
-    await writeAudit(tx as unknown as AuditWriter, {
-      pharmacyId: actor.pharmacyId,
-      actorType: "USER",
-      actorUserId: actor.userId,
-      entityType: "PharmacyMembership",
-      entityId: membership.id,
-      action: AUDIT_ACTION.USER_INVITED,
-      after: { userId, email, role, activated: Boolean(passwordHash) },
-    });
-
-    return { ok: true, code: "MEMBER_INVITED", data: undefined } as const;
+  const existing = await tx.user.findUnique({
+    where: { email },
+    select: { id: true, passwordHash: true, status: true },
   });
 
-  return outcome;
+  if (existing) {
+    const alreadyMember = await tx.pharmacyMembership.findFirst({
+      where: { pharmacyId: actor.pharmacyId, userId: existing.id },
+      select: { id: true },
+    });
+    if (alreadyMember) return { ok: false, code: "EMAIL_TAKEN" };
+  }
+
+  // A `User` is a GLOBAL identity — one person, two pharmacies. When the
+  // address already exists the membership is attached to it rather than a
+  // second account being invented; `User.email` is unique, so the alternative
+  // is an error that strands a real colleague with no way in.
+  const userId = existing
+    ? existing.id
+    : (
+        await tx.user.create({
+          data: {
+            email,
+            fullName,
+            phoneE164: phoneE164 ?? null,
+            status: passwordHash ? "ACTIVE" : "INVITED",
+            passwordHash,
+            passwordAlgo: passwordHash ? PASSWORD_ALGO : null,
+          },
+          select: { id: true },
+        })
+      ).id;
+
+  // Fills in a missing password for an existing account that has never been
+  // able to sign in. Never overwrites one that works.
+  if (existing && passwordHash && !existing.passwordHash) {
+    await tx.user.update({
+      where: { id: userId },
+      data: { passwordHash, passwordAlgo: PASSWORD_ALGO, status: "ACTIVE" },
+    });
+  }
+
+  const membership = await tx.pharmacyMembership.create({
+    data: { userId, pharmacyId: actor.pharmacyId, role, active: true },
+    select: { id: true },
+  });
+
+  await writeAudit(tx as unknown as AuditWriter, {
+    pharmacyId: actor.pharmacyId,
+    actorType: "USER",
+    actorUserId: actor.userId,
+    entityType: "PharmacyMembership",
+    entityId: membership.id,
+    action: AUDIT_ACTION.USER_INVITED,
+    after: { userId, email, role, activated: Boolean(passwordHash) },
+  });
+
+  return { ok: true, code: "MEMBER_INVITED", data: undefined };
+}
+
+export async function invitePharmacyMember(
+  actor: AdminActor,
+  input: Record<string, unknown>,
+): Promise<AdminMutationResult> {
+  const parsed = parseInviteInput(input);
+  if (!parsed.ok) return parsed;
+
+  const passwordHash = parsed.data.initialPassword
+    ? await hashPassword(parsed.data.initialPassword)
+    : null;
+
+  return prisma.$transaction((tx) =>
+    invitePharmacyMemberTx(tx, actor, parsed.data, passwordHash),
+  );
 }

@@ -4,7 +4,11 @@ import { hasLocale } from "next-intl";
 import { redirect } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
 import { requireSessionUser } from "@/server/auth/current-user";
-import { PermissionDeniedError, requirePermission } from "@/server/auth/rbac";
+import {
+  ASSIGNABLE_ROLES,
+  PermissionDeniedError,
+  requirePermission,
+} from "@/server/auth/rbac";
 import type { SessionContext } from "@/server/auth/session";
 import {
   applyMembershipActive,
@@ -81,8 +85,16 @@ async function usersManager(
 
 const USERS = "/settings/users";
 
+/** The two accounts a pharmacy is made of. See `ASSIGNABLE_ROLES`. */
+const ASSIGNABLE = new Set<string>(ASSIGNABLE_ROLES);
+
 /**
  * Add a colleague.
+ *
+ * Account creation is the platform owner's power. A pharmacy manager can list
+ * staff, change roles and end access, but this endpoint refuses every caller
+ * except the super admin — hiding the form would protect nothing, because the
+ * POST can be written by hand.
  *
  * The password field is optional and blank is the normal case: with no mail
  * delivery and no password-reset flow in this product, an invitation cannot
@@ -95,12 +107,27 @@ const USERS = "/settings/users";
 export async function inviteMember(formData: FormData): Promise<void> {
   const { locale, user } = await usersManager(formData);
 
+  if (!user.isSuperAdmin) {
+    redirect({ href: { pathname: USERS, query: { error: "FORBIDDEN" } }, locale });
+  }
+
+  // The select offers manager and doctor only, and the core's schema is broader
+  // because role CHANGES legitimately use all four. A hand-written POST must not
+  // be able to mint an assistant through this form.
+  const role = field(formData, "role");
+  if (role !== undefined && !ASSIGNABLE.has(role)) {
+    redirect({
+      href: { pathname: USERS, query: { error: "INVALID_INPUT", field: "role" } },
+      locale,
+    });
+  }
+
   const result = await invitePharmacyMember(
     { pharmacyId: user.pharmacyId, userId: user.userId },
     {
       email: field(formData, "email"),
       fullName: field(formData, "fullName"),
-      role: field(formData, "role"),
+      role,
       phoneE164: field(formData, "phoneE164"),
       initialPassword: field(formData, "initialPassword"),
     },

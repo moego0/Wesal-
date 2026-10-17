@@ -29,13 +29,17 @@
     "messages": "Message log",
     "reports": "Reports",
     "settings": "Settings",
-    "operations": "Operations"
+    "operations": "Operations",
+    "platform": "Platform",
+    "pharmacyLabel": "Current pharmacy",
+    "switchPharmacy": "Switch"
   },
   "roles": {
     "PHARMACY_ADMIN": "Pharmacy admin",
     "PHARMACIST": "Pharmacist",
     "ASSISTANT": "Assistant",
-    "VIEWER": "Viewer"
+    "VIEWER": "Viewer",
+    "SUPER_ADMIN": "Platform owner"
   },
   "enums": {
     "delivery": {
@@ -286,6 +290,7 @@
     "noResultsHint": "Try a wider date range, or clear a filter",
     "action": {
       "PHARMACY_CREATED": "Pharmacy created",
+      "PHARMACY_ACCESSED": "Platform owner opened this pharmacy",
       "PHARMACY_UPDATED": "Pharmacy details changed",
       "USER_INVITED": "User added",
       "USER_ROLE_CHANGED": "User role changed",
@@ -727,6 +732,16 @@
       "users": "Users",
       "audit": "Audit log"
     },
+    "summary": {
+      "title": "This pharmacy",
+      "pharmacy": "{name}",
+      "managers": "Managers",
+      "managersHint": "Active manager accounts",
+      "doctors": "Doctors",
+      "doctorsHint": "Active doctor accounts",
+      "patients": "Patients",
+      "patientsHint": "Every patient file in this pharmacy"
+    },
     "profile": {
       "title": "Pharmacy details",
       "hint": "The name and details that appear on everything that goes out to patients.",
@@ -814,7 +829,8 @@
       "role": "Role",
       "password": "Password (optional)",
       "passwordHint": "Leave empty and the account is created without one, so it cannot sign in until someone sets a password. Fill it in to provision the account now.",
-      "submit": "Add"
+      "submit": "Add",
+      "platformOnly": "Accounts are created by the platform owner. You can change roles and end access below; ask the platform owner to add a new manager or doctor."
     },
     "columns": {
       "name": "Name",
@@ -990,6 +1006,131 @@
       "templateStatus": "Status",
       "empty": "No templates recorded",
       "emptyHint": "Run the bootstrap to record the reminder template."
+    }
+  },
+  "platform": {
+    "title": "Platform",
+    "subtitle": "Every pharmacy on this installation, and the accounts inside them.",
+    "footnote": "Pharmacies and every account inside them are created here. A pharmacy manager can view and manage their own staff, but cannot create accounts.",
+    "newPharmacy": {
+      "title": "Create a pharmacy",
+      "hint": "The pharmacy and its first manager are created together. The manager can sign in immediately and manage that pharmacy's staff, patients and settings.",
+      "name": "Pharmacy name",
+      "timeZone": "Time zone",
+      "timeZoneHint": "Every dose, quiet hour and report is calculated in this zone.",
+      "defaultLocale": "Default language",
+      "quietStart": "Quiet hours start",
+      "quietEnd": "Quiet hours end",
+      "managerSection": "First manager",
+      "managerFullName": "Full name",
+      "managerEmail": "Email",
+      "managerPhone": "Mobile number (optional)",
+      "managerPassword": "Password",
+      "managerPasswordHint": "At least 10 characters. The manager needs it to sign in.",
+      "locale": {
+        "AR_EG": "Arabic",
+        "EN": "English"
+      },
+      "submit": "Create pharmacy"
+    },
+    "list": {
+      "title": "Pharmacies",
+      "empty": "No pharmacies yet",
+      "emptyHint": "Create the first pharmacy and its manager above",
+      "columns": {
+        "name": "Pharmacy",
+        "managers": "Managers",
+        "doctors": "Doctors",
+        "patients": "Patients",
+        "created": "Created"
+      }
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "OTHER": "Status: {status}"
+    },
+    "detail": {
+      "title": "Pharmacy",
+      "back": "All pharmacies",
+      "managers": "Managers",
+      "managersHint": "Active manager accounts",
+      "doctors": "Doctors",
+      "doctorsHint": "Active doctor accounts",
+      "patients": "Patients",
+      "patientsHint": "Every patient file in this pharmacy",
+      "info": {
+        "title": "Details",
+        "timeZone": "Time zone",
+        "defaultLocale": "Default language",
+        "quietHours": "Quiet hours",
+        "created": "Created"
+      },
+      "open": {
+        "title": "Open this pharmacy",
+        "hint": "Every screen is then scoped to this pharmacy until you switch again.",
+        "submit": "Open pharmacy"
+      },
+      "addAccount": {
+        "title": "Add an account",
+        "hint": "Managers and doctors are the only accounts a pharmacy has. Only the platform owner can create them.",
+        "fullName": "Full name",
+        "email": "Email",
+        "role": "Role",
+        "phone": "Mobile number (optional)",
+        "password": "Password (optional)",
+        "passwordHint": "At least 10 characters. Leave empty and the account cannot sign in until a password is set.",
+        "submit": "Add account"
+      },
+      "staff": {
+        "title": "Staff",
+        "subtitle": "{count} accounts in this pharmacy",
+        "empty": "No staff yet",
+        "emptyHint": "Add the pharmacy's first manager or doctor above",
+        "active": "Has access",
+        "inactive": "Access ended",
+        "unassigned": "{count} patients were added before the pharmacy began recording who added them; they are not counted under any user.",
+        "columns": {
+          "name": "Name",
+          "email": "Email",
+          "role": "Role",
+          "status": "Account",
+          "patients": "Patients",
+          "joined": "Joined"
+        },
+        "userStatus": {
+          "ACTIVE": "Account active",
+          "SUSPENDED": "Account suspended",
+          "INVITED": "Invitation not activated"
+        }
+      }
+    },
+    "ok": {
+      "PHARMACY_CREATED": "Pharmacy and manager created.",
+      "ACCOUNT_CREATED": "Account created.",
+      "PHARMACY_OPENED": "Opened. Every screen now shows this pharmacy's data."
+    },
+    "error": {
+      "title": "Nothing was changed.",
+      "NOT_FOUND": "That pharmacy no longer exists.",
+      "INVALID_INPUT": "Some of those details are not accepted.",
+      "EMAIL_TAKEN": "That person already has an account at this pharmacy.",
+      "field": {
+        "name": "The pharmacy name must be between 2 and 120 characters.",
+        "timeZone": "That is not a time zone the scheduler recognises.",
+        "defaultLocale": "That is not a language this app supports.",
+        "quietHoursStart": "Enter a 24-hour time, for example 22:00.",
+        "quietHoursEnd": "Enter a 24-hour time, for example 07:00.",
+        "managerFullName": "The manager's name must be between 2 and 120 characters.",
+        "managerEmail": "Enter a valid email address for the manager.",
+        "managerPhoneE164": "That mobile number is too long.",
+        "managerPassword": "The manager's password must be at least 10 characters.",
+        "fullName": "The name must be between 2 and 120 characters.",
+        "email": "Enter a valid email address.",
+        "role": "Choose manager or doctor.",
+        "phoneE164": "That mobile number is too long.",
+        "initialPassword": "A password must be at least 10 characters.",
+        "pharmacyId": "That pharmacy could not be identified."
+      }
     }
   }
 }

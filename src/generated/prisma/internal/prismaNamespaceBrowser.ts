@@ -116,6 +116,7 @@ export const UserScalarFieldEnum = {
   fullName: 'fullName',
   locale: 'locale',
   status: 'status',
+  isSuperAdmin: 'isSuperAdmin',
   passwordHash: 'passwordHash',
   passwordAlgo: 'passwordAlgo',
   lastLoginAt: 'lastLoginAt',

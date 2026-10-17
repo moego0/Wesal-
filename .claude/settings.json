@@ -17,7 +17,26 @@
       "Bash(node -e \"const e=require\\('./src/messages/fragments/users.en.json'\\); console.log\\(Object.keys\\(e\\)\\); console.log\\(JSON.stringify\\(e,null,1\\).slice\\(0,900\\)\\)\")",
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
       "Bash(node -e \"const fs=require\\('fs'\\);const dir='src/messages/fragments';const files=fs.readdirSync\\(dir\\);const nss=[...new Set\\(files.filter\\(f=>f.endsWith\\('.json'\\)\\).map\\(f=>f.replace\\(/\\\\.\\(ar|en\\)\\\\.json$/,''\\)\\).filter\\(ns=>files.includes\\(ns+'.ar.json'\\)||files.includes\\(ns+'.en.json'\\)\\)\\)].sort\\(\\);const ar=JSON.parse\\(fs.readFileSync\\('src/messages/ar.json','utf8'\\)\\);const en=JSON.parse\\(fs.readFileSync\\('src/messages/en.json','utf8'\\)\\);for\\(const ns of nss\\){const fa=JSON.parse\\(fs.readFileSync\\(dir+'/'+ns+'.ar.json','utf8'\\)\\);const fe=JSON.parse\\(fs.readFileSync\\(dir+'/'+ns+'.en.json','utf8'\\)\\);const sameA=JSON.stringify\\(ar[ns]\\)===JSON.stringify\\(fa[ns]\\);const sameE=JSON.stringify\\(en[ns]\\)===JSON.stringify\\(fe[ns]\\);console.log\\(ns.padEnd\\(16\\),'ar:',sameA?'same':'DIFF','en:',sameE?'same':'DIFF'\\);}\")",
-      "Bash(node -e \"const fs=require\\('fs'\\);const en=JSON.parse\\(fs.readFileSync\\('src/messages/en.json','utf8'\\)\\);console.log\\(JSON.stringify\\(en.users.columns,null,2\\)\\);console.log\\(JSON.stringify\\(en.users.footnote\\)\\);\")"
+      "Bash(node -e \"const fs=require\\('fs'\\);const en=JSON.parse\\(fs.readFileSync\\('src/messages/en.json','utf8'\\)\\);console.log\\(JSON.stringify\\(en.users.columns,null,2\\)\\);console.log\\(JSON.stringify\\(en.users.footnote\\)\\);\")",
+      "Bash(node -e \"const p=require\\('D:/projects/WASALH/package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(node -e \"const a=require\\('./src/messages/en.json'\\); console.log\\(Object.keys\\(a\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e \"const a=require\\('./src/messages/en.json'\\); for \\(const k of ['common','nav','roles','settings','audit']\\) console.log\\(k, JSON.stringify\\(a[k],null,1\\).slice\\(0,1500\\)\\)\")",
+      "Bash(node -e \"const a=require\\('D:/projects/WASALH/src/messages/ar.json'\\); console.log\\(JSON.stringify\\(a.roles,null,2\\)\\); const e=require\\('D:/projects/WASALH/src/messages/en.json'\\); console.log\\(JSON.stringify\\(e.roles,null,2\\)\\)\")",
+      "Bash(curl -s -o /dev/null -w \"dailymed:%{http_code} %{time_total}s\\\\n\" --max-time 12 \"https://dailymed.nlm.nih.gov/dailymed/services/v2/drugnames.json?drug_name=metformin&pagesize=5&page=1\")",
+      "Bash(curl -s -o /dev/null -w \"rxnav:%{http_code} %{time_total}s\\\\n\" --max-time 12 \"https://rxnav.nlm.nih.gov/REST/rxcui.json?name=METFORMIN\")",
+      "Bash(node -e \"const a=require\\('./src/messages/ar.json'\\); console.log\\(JSON.stringify\\(a.roles,null,2\\)\\)\")",
+      "Bash(node -e \"const e=require\\('./src/messages/en.json'\\); console.log\\(JSON.stringify\\(e.roles,null,2\\)\\)\")",
+      "Bash(node -e \"const e=require\\('./src/messages/en.json'\\); console.log\\(Object.keys\\(e\\).join\\(', '\\)\\)\")",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null --max-time 2 http://localhost:3000/)",
+      "Bash(break)",
+      "Bash(curl -s -w \"\\\\nstatus:%{http_code}\\\\n\" --max-time 20 \"http://localhost:3000/api/drug-names?q=metformin\")",
+      "Bash(node -e \"const a=require\\('./src/messages/ar.json'\\); console.log\\(Object.keys\\(a\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e \"const a=require\\('./src/messages/ar.json'\\); console.log\\(JSON.stringify\\(a.roles,null,2\\)\\); console.log\\(JSON.stringify\\(a.nav,null,2\\)\\); console.log\\(JSON.stringify\\(a.common,null,2\\)\\)\")",
+      "Bash(node -e \"const a=require\\('./src/messages/en.json'\\); console.log\\(JSON.stringify\\(a.roles,null,2\\)\\); console.log\\(JSON.stringify\\(a.nav,null,2\\)\\)\")"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
     ]
   }
 }

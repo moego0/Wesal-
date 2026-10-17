@@ -8,6 +8,16 @@
       "users": "Users",
       "audit": "Audit log"
     },
+    "summary": {
+      "title": "This pharmacy",
+      "pharmacy": "{name}",
+      "managers": "Managers",
+      "managersHint": "Active manager accounts",
+      "doctors": "Doctors",
+      "doctorsHint": "Active doctor accounts",
+      "patients": "Patients",
+      "patientsHint": "Every patient file in this pharmacy"
+    },
     "profile": {
       "title": "Pharmacy details",
       "hint": "The name and details that appear on everything that goes out to patients.",

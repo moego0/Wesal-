@@ -16,6 +16,7 @@
     "db:reset": "prisma migrate reset --force",
     "db:seed": "tsx prisma/seed.ts",
     "db:bootstrap": "node --import tsx scripts/bootstrap-prod.ts",
+    "db:grant-super-admin": "node --import tsx scripts/grant-super-admin.ts",
     "db:studio": "prisma studio",
     "test": "vitest run",
     "test:watch": "vitest",

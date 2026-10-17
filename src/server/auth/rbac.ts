@@ -83,15 +83,33 @@ export function permissionsFor(role: PharmacyRole): ReadonlySet<Permission> {
 }
 
 /** Anything carrying a role: a session context, a membership, a bare role. */
-export type RoleHolder = { role: PharmacyRole };
+export type RoleHolder = {
+  role: PharmacyRole;
+  /**
+   * The platform owner. Optional so a bare membership (which has no such
+   * column) still satisfies the type; `true` is the only value that matters,
+   * and it grants every permission without consulting the role map.
+   */
+  isSuperAdmin?: boolean;
+};
 
 export function hasPermission(
   holder: RoleHolder | null | undefined,
   permission: Permission,
 ): boolean {
   if (!holder) return false;
+  // Short-circuit, not a role entry: the platform owner holds every permission
+  // at every pharmacy, including ones they are not a member of. This is the
+  // single place that fact is encoded.
+  if (holder.isSuperAdmin === true) return true;
   return PERMISSIONS_BY_ROLE[holder.role].has(permission);
 }
+
+/**
+ * The two roles a platform-created account may have. The product's vocabulary
+ * calls them manager and doctor; the enum keeps the pharmacy-scoped names.
+ */
+export const ASSIGNABLE_ROLES: readonly PharmacyRole[] = ["PHARMACY_ADMIN", "PHARMACIST"];
 
 export class PermissionDeniedError extends Error {
   constructor(
@@ -103,6 +121,13 @@ export class PermissionDeniedError extends Error {
   }
 }
 
+export class SuperAdminRequiredError extends Error {
+  constructor() {
+    super("This operation is restricted to the platform owner");
+    this.name = "SuperAdminRequiredError";
+  }
+}
+
 /**
  * Throws rather than returning a boolean so an unguarded code path fails
  * loudly instead of continuing with a falsy result nobody checked.
@@ -111,4 +136,15 @@ export function requirePermission(holder: RoleHolder, permission: Permission): v
   if (!hasPermission(holder, permission)) {
     throw new PermissionDeniedError(permission, holder.role);
   }
+}
+
+/**
+ * The platform console and the cross-tenant mutations behind it.
+ *
+ * Separate from the permission list on purpose: "can administer every tenant"
+ * is not a permission any pharmacy role can be granted, and expressing it as
+ * one would make it assignable by a future role table edit.
+ */
+export function requireSuperAdmin(holder: { isSuperAdmin?: boolean } | null | undefined): void {
+  if (holder?.isSuperAdmin !== true) throw new SuperAdminRequiredError();
 }

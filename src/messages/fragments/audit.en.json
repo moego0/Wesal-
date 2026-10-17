@@ -49,6 +49,7 @@
     "noResultsHint": "Try a wider date range, or clear a filter",
     "action": {
       "PHARMACY_CREATED": "Pharmacy created",
+    "PHARMACY_ACCESSED": "Platform owner opened this pharmacy",
       "PHARMACY_UPDATED": "Pharmacy details changed",
       "USER_INVITED": "User added",
       "USER_ROLE_CHANGED": "User role changed",

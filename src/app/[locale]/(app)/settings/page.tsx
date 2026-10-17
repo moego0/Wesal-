@@ -14,6 +14,7 @@ import {
   Notice,
   PageHeader,
   SkeletonRows,
+  StatCard,
   buttonClass,
   inputClass,
   selectClass,
@@ -25,6 +26,7 @@ import {
   DRY_RUN_SAMPLE,
   dryRunRuleSettings,
   getPharmacyProfile,
+  getPharmacySummary,
   listPharmacyChannels,
   listRuleSettings,
   paramMeta,
@@ -136,13 +138,14 @@ async function SettingsBody({
     getTranslations({ locale, namespace: "localeSwitcher" }),
   ]);
 
-  const [profile, channels, rules] = await Promise.all([
+  const [profile, channels, rules, summary] = await Promise.all([
     getPharmacyProfile(user.pharmacyId),
     listPharmacyChannels(user.pharmacyId),
     listRuleSettings(user.pharmacyId),
+    getPharmacySummary(user.pharmacyId),
   ]);
 
-  if (!profile) notFound();
+  if (!profile || !summary) notFound();
 
   const ok = one(raw.ok);
   const error = one(raw.error);
@@ -212,6 +215,40 @@ async function SettingsBody({
           ) : null}
         </ul>
       </nav>
+
+      {/*
+       * The three numbers a manager is promised: how many doctors work here,
+       * how many other managers share the responsibility, and how many
+       * patients the pharmacy carries. The pharmacy's own name is stated
+       * above them rather than crammed into a number-sized card.
+       */}
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50">
+            {t("summary.title")}
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {t("summary.pharmacy", { name: summary.name })}
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard
+            label={t("summary.managers")}
+            value={formatNumber(locale, summary.managers)}
+            hint={t("summary.managersHint")}
+          />
+          <StatCard
+            label={t("summary.doctors")}
+            value={formatNumber(locale, summary.doctors)}
+            hint={t("summary.doctorsHint")}
+          />
+          <StatCard
+            label={t("summary.patients")}
+            value={formatNumber(locale, summary.patients)}
+            hint={t("summary.patientsHint")}
+          />
+        </div>
+      </section>
 
       {ok && OK_CODES.has(ok) ? (
         <Notice tone="success" title={ok === "PROFILE_SAVED" ? t("ok.PROFILE_SAVED") : undefined}>

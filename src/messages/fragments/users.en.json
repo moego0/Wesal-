@@ -17,7 +17,8 @@
       "role": "Role",
       "password": "Password (optional)",
       "passwordHint": "Leave empty and the account is created without one, so it cannot sign in until someone sets a password. Fill it in to provision the account now.",
-      "submit": "Add"
+      "submit": "Add",
+      "platformOnly": "Accounts are created by the platform owner. You can change roles and end access below; ask the platform owner to add a new manager or doctor."
     },
     "columns": {
       "name": "Name",

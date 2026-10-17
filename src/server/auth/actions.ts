@@ -98,15 +98,29 @@ export async function loginAction(
     orderBy: { createdAt: "asc" },
   });
 
-  if (memberships.length === 0) {
+  if (memberships.length === 0 && !user.isSuperAdmin) {
     await burnVerificationTime(password);
     return INVALID;
   }
 
   // See `activePharmacyIdForLogin`: one membership pins the session, more than
-  // one leaves it null and lets `validateSession` fall back.
+  // one leaves it null and lets `validateSession` fall back. The platform owner
+  // is allowed to have no membership at all; the oldest pharmacy then supplies
+  // the initial scope, and the shell switcher repoints it from there.
   const activePharmacyId = activePharmacyIdForLogin(memberships);
-  const auditPharmacyId = memberships[0].pharmacyId;
+  const auditPharmacyId =
+    memberships[0]?.pharmacyId ??
+    (user.isSuperAdmin
+      ? ((
+          await systemPrisma.pharmacy.findFirst({
+            // Same scope `validateSession` falls back to, so the sign-in is
+            // filed in the pharmacy the session actually opens.
+            where: { status: "ACTIVE" },
+            orderBy: { createdAt: "asc" },
+            select: { id: true },
+          })
+        )?.id ?? null)
+      : null);
   const rehash = needsRehash(user.passwordHash);
 
   // Runs on the unguarded client: a login has no pharmacy context yet, every
@@ -135,24 +149,30 @@ export async function loginAction(
       data: { lastLoginAt: new Date() },
     });
 
-    // The cast is forced by `AuditWriter` in src/server/audit.ts being a
-    // structural stand-in for any writer; see `writeSystemAudit` there.
-    await writeAudit(tx as unknown as AuditWriter, {
-      pharmacyId: auditPharmacyId,
-      actorType: "USER",
-      actorUserId: user.id,
-      entityType: "Session",
-      entityId: created.sessionId,
-      action: AUDIT_ACTION.LOGIN_SUCCEEDED,
-      ipAddress: ipAddress ?? undefined,
-    });
+    // A super admin on a deployment with no pharmacy yet has nowhere to file
+    // this row: `AuditEvent.pharmacyId` is required, and inventing a tenant
+    // would put their sign-in in another pharmacy's permanent log.
+    if (auditPharmacyId) {
+      // The cast is forced by `AuditWriter` in src/server/audit.ts being a
+      // structural stand-in for any writer; see `writeSystemAudit` there.
+      await writeAudit(tx as unknown as AuditWriter, {
+        pharmacyId: auditPharmacyId,
+        actorType: "USER",
+        actorUserId: user.id,
+        entityType: "Session",
+        entityId: created.sessionId,
+        action: AUDIT_ACTION.LOGIN_SUCCEEDED,
+        ipAddress: ipAddress ?? undefined,
+      });
+    }
 
     return created;
   });
 
   await setSessionCookie(session.token, session.expiresAt);
 
-  redirect(`/${locale}`);
+  // The platform owner lands on the console; everyone else on the dashboard.
+  redirect(user.isSuperAdmin ? `/${locale}/platform` : `/${locale}`);
 }
 
 /**

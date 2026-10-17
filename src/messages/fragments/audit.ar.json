@@ -49,6 +49,7 @@
     "noResultsHint": "جرّب مدى تاريخ أوسع، أو امسح تصفية",
     "action": {
       "PHARMACY_CREATED": "اتعملت الصيدلية",
+    "PHARMACY_ACCESSED": "مالك المنصة فتح الصيدلية دي",
       "PHARMACY_UPDATED": "اتعدلت بيانات الصيدلية",
       "USER_INVITED": "اتضاف مستخدم",
       "USER_ROLE_CHANGED": "اتغير دور مستخدم",

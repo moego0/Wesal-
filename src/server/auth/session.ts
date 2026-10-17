@@ -133,11 +133,21 @@ export type SessionContext = {
   email: string;
   fullName: string;
   locale: Locale;
-  /** The pharmacy this request is scoped to. Never null — see below. */
+  /**
+   * The pharmacy this request is scoped to. Never null — see below. It is the
+   * empty string only for a super admin on a deployment that has no pharmacy
+   * yet, which is the state just before the first one is created.
+   */
   pharmacyId: string;
   pharmacyName: string;
   pharmacyTimeZone: string;
   role: PharmacyRole;
+  /**
+   * Platform owner. Grants every permission everywhere through
+   * `hasPermission`, and is the only way past `requireSuperAdmin` — the
+   * membership role below is then only a display fallback.
+   */
+  isSuperAdmin: boolean;
 };
 
 /**
@@ -148,8 +158,9 @@ export type SessionContext = {
  * tenant guard would reject a `findMany` here for exactly that reason.
  *
  * Null means "treat as signed out": no such session, expired, revoked, user
- * not ACTIVE, or no active membership left. The caller redirects to login;
- * none of these cases should be distinguishable to the client.
+ * not ACTIVE, or a non-super-admin with no active membership left. The caller
+ * redirects to login; none of these cases should be distinguishable to the
+ * client.
  */
 export async function validateSession(token: string): Promise<SessionContext | null> {
   const row = await systemPrisma.session.findUnique({
@@ -173,27 +184,88 @@ export async function validateSession(token: string): Promise<SessionContext | n
   if (row.user.status !== "ACTIVE") return null;
 
   const memberships = row.user.memberships;
+  const isSuperAdmin = row.user.isSuperAdmin;
 
   // TODO(tenancy): when a user has more than one membership, `activePharmacyId`
   // is set to null at login and there is no UI to choose. Until that chooser
   // exists, the first active membership (oldest, by createdAt) stands in for
   // the choice. The ordering is stable, so a user does not silently hop
   // between pharmacies between requests.
-  const membership =
-    memberships.find((m) => m.pharmacyId === row.activePharmacyId) ?? memberships[0];
+  const pinned = memberships.find((m) => m.pharmacyId === row.activePharmacyId);
 
-  if (!membership) return null;
+  // A super admin may pin a session to a pharmacy they hold no membership in —
+  // that is what opening another tenant from /platform does. The pharmacy is
+  // read directly because there is no membership to join through, and the
+  // synthesized PHARMACY_ADMIN role is a display value: `hasPermission`
+  // short-circuits on `isSuperAdmin`, so it grants nothing extra.
+  if (isSuperAdmin && row.activePharmacyId !== null && !pinned) {
+    const pharmacy = await systemPrisma.pharmacy.findUnique({
+      where: { id: row.activePharmacyId },
+      select: { id: true, name: true, timeZone: true },
+    });
 
-  return {
-    sessionId: row.id,
-    expiresAt: row.expiresAt,
-    userId: row.user.id,
-    email: row.user.email,
-    fullName: row.user.fullName,
-    locale: row.user.locale,
-    pharmacyId: membership.pharmacyId,
-    pharmacyName: membership.pharmacy.name,
-    pharmacyTimeZone: membership.pharmacy.timeZone,
-    role: membership.role,
-  };
+    if (pharmacy) {
+      return {
+        sessionId: row.id,
+        expiresAt: row.expiresAt,
+        userId: row.user.id,
+        email: row.user.email,
+        fullName: row.user.fullName,
+        locale: row.user.locale,
+        pharmacyId: pharmacy.id,
+        pharmacyName: pharmacy.name,
+        pharmacyTimeZone: pharmacy.timeZone,
+        role: "PHARMACY_ADMIN",
+        isSuperAdmin,
+      };
+    }
+  }
+
+  const membership = pinned ?? memberships[0];
+
+  if (membership) {
+    return {
+      sessionId: row.id,
+      expiresAt: row.expiresAt,
+      userId: row.user.id,
+      email: row.user.email,
+      fullName: row.user.fullName,
+      locale: row.user.locale,
+      pharmacyId: membership.pharmacyId,
+      pharmacyName: membership.pharmacy.name,
+      pharmacyTimeZone: membership.pharmacy.timeZone,
+      role: membership.role,
+      isSuperAdmin,
+    };
+  }
+
+  // A super admin is not required to be a member of anything: on a fresh
+  // deployment the platform owner exists before the first pharmacy does, and
+  // locking them out would make that state unrecoverable from the UI. The
+  // oldest active pharmacy supplies the scope (the dashboard and every
+  // pharmacy screen filter by it and simply read empty); an empty id is
+  // returned when there is no pharmacy at all yet.
+  if (isSuperAdmin) {
+    const pharmacy = await systemPrisma.pharmacy.findFirst({
+      where: { status: "ACTIVE" },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, timeZone: true },
+    });
+
+    return {
+      sessionId: row.id,
+      expiresAt: row.expiresAt,
+      userId: row.user.id,
+      email: row.user.email,
+      fullName: row.user.fullName,
+      locale: row.user.locale,
+      pharmacyId: pharmacy?.id ?? "",
+      pharmacyName: pharmacy?.name ?? "",
+      pharmacyTimeZone: pharmacy?.timeZone ?? "Africa/Cairo",
+      role: "PHARMACY_ADMIN",
+      isSuperAdmin,
+    };
+  }
+
+  return null;
 }

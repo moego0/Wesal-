@@ -435,10 +435,6 @@ export type EnumPharmacyRoleFieldUpdateOperationsInput = {
   set?: $Enums.PharmacyRole
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type PharmacyMembershipCreateWithoutPharmacyInput = {
   id?: string
   role: $Enums.PharmacyRole

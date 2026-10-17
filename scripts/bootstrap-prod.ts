@@ -14,13 +14,24 @@ import { PASSWORD_ALGO, hashPassword } from "../src/server/auth/password";
  * What it creates:
  *
  *   1. the pharmacy
- *   2. one admin user (a PHARMACY_ADMIN member of that pharmacy)
+ *   2. one admin user (a PHARMACY_ADMIN member of that pharmacy, and the
+ *      platform owner — see the note on `isSuperAdmin` below)
  *   3. the MessagingChannel row — the inbound routing key
  *   4. the reminder template record (bookkeeping only, see below)
  *
  * What it does NOT create: `RuleDefinition` rows. Those are derived from the
  * TypeScript catalog by `ensureSystemRules()` at worker boot, so writing them
  * here would only create a second source of truth that can drift.
+ *
+ * ── The bootstrap admin is also the platform owner ──
+ *
+ * Account creation belongs to one account (`User.isSuperAdmin`), and on a fresh
+ * installation this script is where that account comes from. The flag is granted
+ * to ADMIN_EMAIL whether the user is being created or already exists, so a
+ * database bootstrapped before the flag existed adopts it on the next run. The
+ * flag is orthogonal to the membership below: the owner keeps ordinary
+ * PHARMACY_ADMIN access here and gains the platform console on top of it.
+ * Use `scripts/grant-super-admin.ts` to move the flag to a different address.
  *
  * ── The MessagingChannel is the one row that actually matters ──
  *
@@ -103,8 +114,20 @@ async function main() {
         passwordAlgo: PASSWORD_ALGO,
         locale: "AR_EG",
         phoneE164: process.env.ADMIN_PHONE_E164?.trim() || null,
+        // The account that provisions every other account. See the header.
+        isSuperAdmin: true,
       },
     }));
+
+  // An admin created before the platform console existed — or one whose flag was
+  // revoked — is adopted rather than left as a second-class account. Only this
+  // row: the script never touches any other user.
+  if (existingAdmin && !existingAdmin.isSuperAdmin) {
+    await systemPrisma.user.update({
+      where: { id: existingAdmin.id },
+      data: { isSuperAdmin: true },
+    });
+  }
 
   // ── 3. membership ──
   //
@@ -191,7 +214,7 @@ async function main() {
   console.log("  ── bootstrap complete ──────────────────────────────────────");
   console.log(`  pharmacy   ${pharmacy.name}  (${pharmacy.id})`);
   console.log(`  timezone   ${pharmacy.timeZone}, quiet ${pharmacy.quietHoursStart}–${pharmacy.quietHoursEnd}`);
-  console.log(`  admin      ${admin.email}  (PHARMACY_ADMIN)`);
+  console.log(`  admin      ${admin.email}  (PHARMACY_ADMIN, platform owner)`);
   console.log(`  channel    providerPhoneNumberId=${channel.providerPhoneNumberId}`);
   console.log(`  template   ${TEMPLATE_NAME} (ar) — recorded, status UNKNOWN`);
   console.log("");

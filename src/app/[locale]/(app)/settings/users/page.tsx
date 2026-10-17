@@ -22,7 +22,11 @@ import {
   selectClass,
 } from "@/components/ui";
 import { requireSessionUser } from "@/server/auth/current-user";
-import { hasPermission, requirePermission } from "@/server/auth/rbac";
+import {
+  ASSIGNABLE_ROLES,
+  hasPermission,
+  requirePermission,
+} from "@/server/auth/rbac";
 import {
   countActiveAdmins,
   countPatientsByCreator,
@@ -188,100 +192,110 @@ async function UsersBody({
         <Notice tone="warning" title={t("adminCountWarning")} />
       ) : null}
 
-      <Card>
-        <CardHeader
-          title={t("invite.title")}
-          subtitle={t("invite.hint")}
-          actions={
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {t("adminCount", { count: formatNumber(locale, adminCount) })}
-            </span>
-          }
-        />
-        <CardBody>
-          <form action={inviteMember} className="space-y-4">
-            <input type="hidden" name="locale" value={locale} />
+      {/*
+       * Account creation belongs to the platform owner. Managers keep the
+       * staff list and the role/access controls below, but no form that makes
+       * a new account — and the action refuses the POST even if one is sent by
+       * hand, because this card is only a courtesy.
+       */}
+      {user.isSuperAdmin ? (
+        <Card>
+          <CardHeader
+            title={t("invite.title")}
+            subtitle={t("invite.hint")}
+            actions={
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {t("adminCount", { count: formatNumber(locale, adminCount) })}
+              </span>
+            }
+          />
+          <CardBody>
+            <form action={inviteMember} className="space-y-4">
+              <input type="hidden" name="locale" value={locale} />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={t("invite.fullName")} htmlFor="invite-name" required>
-                <input
-                  id="invite-name"
-                  name="fullName"
-                  required
-                  maxLength={120}
-                  autoComplete="off"
-                  className={inputClass}
-                />
-              </Field>
-
-              <Field label={t("invite.email")} htmlFor="invite-email" required>
-                <input
-                  id="invite-email"
-                  name="email"
-                  type="email"
-                  required
-                  dir="ltr"
-                  maxLength={200}
-                  autoComplete="off"
-                  className={inputClass}
-                />
-              </Field>
-
-              <Field label={t("invite.role")} htmlFor="invite-role" required>
-                <select id="invite-role" name="role" required className={selectClass}>
-                  {/* `Object.values(PharmacyRole)` — the enum itself, not a
-                      hand-written list. A role added to the schema appears here,
-                      and `roles.*` already has its label or the coverage test
-                      fails; a literal list here would silently omit it. */}
-                  {Object.values(PharmacyRole).map((role) => (
-                    <option key={role} value={role}>
-                      {tRoles(role)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label={t("invite.phone")} htmlFor="invite-phone">
-                <input
-                  id="invite-phone"
-                  name="phoneE164"
-                  type="tel"
-                  dir="ltr"
-                  maxLength={20}
-                  placeholder="+201000000000"
-                  autoComplete="off"
-                  className={inputClass}
-                />
-              </Field>
-
-              <div className="sm:col-span-2">
-                <Field
-                  label={t("invite.password")}
-                  htmlFor="invite-password"
-                  hint={t("invite.passwordHint")}
-                >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label={t("invite.fullName")} htmlFor="invite-name" required>
                   <input
-                    id="invite-password"
-                    name="initialPassword"
-                    type="password"
-                    dir="ltr"
-                    minLength={10}
-                    maxLength={200}
-                    autoComplete="new-password"
+                    id="invite-name"
+                    name="fullName"
+                    required
+                    maxLength={120}
+                    autoComplete="off"
                     className={inputClass}
                   />
                 </Field>
-              </div>
-            </div>
 
-            <FormActions>
-              <button type="submit" className={buttonClass("primary")}>
-                {t("invite.submit")}
-              </button>
-            </FormActions>
-          </form>
-        </CardBody>
-      </Card>
+                <Field label={t("invite.email")} htmlFor="invite-email" required>
+                  <input
+                    id="invite-email"
+                    name="email"
+                    type="email"
+                    required
+                    dir="ltr"
+                    maxLength={200}
+                    autoComplete="off"
+                    className={inputClass}
+                  />
+                </Field>
+
+                <Field label={t("invite.role")} htmlFor="invite-role" required>
+                  <select id="invite-role" name="role" required className={selectClass}>
+                    {/* Manager and doctor only — the two staff accounts a
+                        pharmacy is made of. `ASSIGNABLE_ROLES` is the same
+                        list the platform console uses, so the two creation
+                        paths cannot drift apart. */}
+                    {ASSIGNABLE_ROLES.map((role) => (
+                      <option key={role} value={role}>
+                        {tRoles(role)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label={t("invite.phone")} htmlFor="invite-phone">
+                  <input
+                    id="invite-phone"
+                    name="phoneE164"
+                    type="tel"
+                    dir="ltr"
+                    maxLength={20}
+                    placeholder="+201000000000"
+                    autoComplete="off"
+                    className={inputClass}
+                  />
+                </Field>
+
+                <div className="sm:col-span-2">
+                  <Field
+                    label={t("invite.password")}
+                    htmlFor="invite-password"
+                    hint={t("invite.passwordHint")}
+                  >
+                    <input
+                      id="invite-password"
+                      name="initialPassword"
+                      type="password"
+                      dir="ltr"
+                      minLength={10}
+                      maxLength={200}
+                      autoComplete="new-password"
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+              </div>
+
+              <FormActions>
+                <button type="submit" className={buttonClass("primary")}>
+                  {t("invite.submit")}
+                </button>
+              </FormActions>
+            </form>
+          </CardBody>
+        </Card>
+      ) : (
+        <Notice tone="info" title={t("invite.platformOnly")} />
+      )}
 
       {members.length === 0 ? (
         <EmptyState title={t("empty")} hint={t("emptyHint")} />

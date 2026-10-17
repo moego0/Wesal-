@@ -36,12 +36,17 @@ async function makePharmacy(label: string) {
   return pharmacy;
 }
 
-async function makeUser(label: string, status: UserStatus = "ACTIVE") {
+async function makeUser(
+  label: string,
+  status: UserStatus = "ACTIVE",
+  isSuperAdmin = false,
+) {
   const user = await systemPrisma.user.create({
     data: {
       email: `test-${label}-${RUN}@wasal.test`,
       fullName: `Test User ${label} (${RUN})`,
       status,
+      isSuperAdmin,
     },
   });
   userIds.push(user.id);
@@ -235,6 +240,115 @@ describe("createSession / validateSession", () => {
     // requests, so a user does not silently hop pharmacies mid-shift.
     expect(session!.pharmacyId).toBe(older.id);
     expect(session!.role).toBe("PHARMACIST");
+  });
+});
+
+describe("the platform owner's session", () => {
+  it("carries the flag through an ordinary membership", async () => {
+    /*
+     * Catches: a context built field by field that forgets `isSuperAdmin`. The
+     * flag is what `hasPermission` short-circuits on and what every platform
+     * action checks, so losing it in the session silently demotes the owner on
+     * every request while their database row still says otherwise.
+     */
+    const pharmacy = await makePharmacy("owner-member");
+    const user = await makeUser("owner-member", "ACTIVE", true);
+    await makeMembership(user.id, pharmacy.id, "PHARMACIST");
+
+    const created = await createSession({
+      userId: user.id,
+      activePharmacyId: pharmacy.id,
+    });
+    const session = await validateSession(created.token);
+
+    expect(session?.isSuperAdmin).toBe(true);
+    // The membership role is preserved, not replaced: the flag is orthogonal.
+    expect(session?.role).toBe("PHARMACIST");
+    expect(session?.pharmacyId).toBe(pharmacy.id);
+  });
+
+  it("opens a pharmacy the owner holds no membership in", async () => {
+    /*
+     * Catches: resolving the pinned pharmacy through the membership join only —
+     * which is what makes "open another tenant" from the platform console
+     * impossible. The synthesized PHARMACY_ADMIN role is display-only; the flag
+     * is what grants the access, and `hasPermission` ignores the role.
+     */
+    const memberOf = await makePharmacy("owner-elsewhere");
+    const opened = await makePharmacy("owner-opened");
+    const user = await makeUser("owner-opened", "ACTIVE", true);
+    await makeMembership(user.id, memberOf.id, "PHARMACIST");
+
+    const created = await createSession({ userId: user.id, activePharmacyId: opened.id });
+    const session = await validateSession(created.token);
+
+    expect(session).not.toBeNull();
+    expect(session!.pharmacyId).toBe(opened.id);
+    expect(session!.pharmacyName).toBe(opened.name);
+    expect(session!.role).toBe("PHARMACY_ADMIN");
+    expect(session!.isSuperAdmin).toBe(true);
+  });
+
+  it("does not extend that to an account without the flag", async () => {
+    /*
+     * Catches: making the direct-read branch unconditional. A non-owner pinned
+     * to a pharmacy they do not belong to must fall back to their own membership
+     * — otherwise a hand-built session row would open any tenant.
+     */
+    const memberOf = await makePharmacy("nonowner-member");
+    const stranger = await makePharmacy("nonowner-stranger");
+    const user = await makeUser("nonowner");
+    await makeMembership(user.id, memberOf.id, "PHARMACIST");
+
+    const created = await createSession({ userId: user.id, activePharmacyId: stranger.id });
+    const session = await validateSession(created.token);
+
+    expect(session).not.toBeNull();
+    expect(session!.pharmacyId).toBe(memberOf.id);
+    expect(session!.isSuperAdmin).toBe(false);
+  });
+
+  it("falls back to the oldest active pharmacy when the owner has no membership", async () => {
+    /*
+     * Catches: returning null for a membership-less account. On a fresh
+     * deployment the owner exists before the first pharmacy; locking them out
+     * would make that state unrecoverable from the UI.
+     */
+    const user = await makeUser("owner-nomembership", "ACTIVE", true);
+
+    const oldest = await systemPrisma.pharmacy.findFirst({
+      where: { status: "ACTIVE" },
+      // Mirror `validateSession`'s ordering exactly, so this compares the same
+      // row rather than the same intention.
+      orderBy: { createdAt: "asc" },
+      select: { id: true, name: true, timeZone: true },
+    });
+
+    const created = await createSession({ userId: user.id, activePharmacyId: null });
+    const session = await validateSession(created.token);
+
+    expect(session).not.toBeNull();
+    expect(session!.isSuperAdmin).toBe(true);
+    expect(session!.role).toBe("PHARMACY_ADMIN");
+    expect(session!.pharmacyId).toBe(oldest?.id ?? "");
+    expect(session!.pharmacyName).toBe(oldest?.name ?? "");
+    expect(session!.pharmacyTimeZone).toBe(oldest?.timeZone ?? "Africa/Cairo");
+  });
+
+  it("still refuses a suspended owner", async () => {
+    /*
+     * Catches: placing the flag check before the account-status check. A
+     * suspended account is suspended at every pharmacy, owner or not.
+     */
+    const pharmacy = await makePharmacy("owner-suspended");
+    const user = await makeUser("owner-suspended", "SUSPENDED", true);
+    await makeMembership(user.id, pharmacy.id, "PHARMACY_ADMIN");
+
+    const created = await createSession({
+      userId: user.id,
+      activePharmacyId: pharmacy.id,
+    });
+    await expect(validateSession(created.token)).resolves.toBeNull();
   });
 });
 

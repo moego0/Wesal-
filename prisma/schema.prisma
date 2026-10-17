@@ -309,6 +309,11 @@ model User {
   fullName     String
   locale       Locale     @default(AR_EG)
   status       UserStatus @default(ACTIVE)
+  /// Platform owner. Holds every permission at every pharmacy and is the only
+  /// account that may create pharmacies or pharmacy accounts. Orthogonal to
+  /// `PharmacyMembership`: a super admin keeps their own membership rows, and
+  /// may open a pharmacy they are not a member of.
+  isSuperAdmin Boolean    @default(false)
   passwordHash String?
   /// scrypt parameters actually used, so hashes can be upgraded over time
   /// without invalidating existing logins.

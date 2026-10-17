@@ -32,6 +32,7 @@ export type UserMinAggregateOutputType = {
   fullName: string | null
   locale: $Enums.Locale | null
   status: $Enums.UserStatus | null
+  isSuperAdmin: boolean | null
   passwordHash: string | null
   passwordAlgo: string | null
   lastLoginAt: Date | null
@@ -46,6 +47,7 @@ export type UserMaxAggregateOutputType = {
   fullName: string | null
   locale: $Enums.Locale | null
   status: $Enums.UserStatus | null
+  isSuperAdmin: boolean | null
   passwordHash: string | null
   passwordAlgo: string | null
   lastLoginAt: Date | null
@@ -60,6 +62,7 @@ export type UserCountAggregateOutputType = {
   fullName: number
   locale: number
   status: number
+  isSuperAdmin: number
   passwordHash: number
   passwordAlgo: number
   lastLoginAt: number
@@ -76,6 +79,7 @@ export type UserMinAggregateInputType = {
   fullName?: true
   locale?: true
   status?: true
+  isSuperAdmin?: true
   passwordHash?: true
   passwordAlgo?: true
   lastLoginAt?: true
@@ -90,6 +94,7 @@ export type UserMaxAggregateInputType = {
   fullName?: true
   locale?: true
   status?: true
+  isSuperAdmin?: true
   passwordHash?: true
   passwordAlgo?: true
   lastLoginAt?: true
@@ -104,6 +109,7 @@ export type UserCountAggregateInputType = {
   fullName?: true
   locale?: true
   status?: true
+  isSuperAdmin?: true
   passwordHash?: true
   passwordAlgo?: true
   lastLoginAt?: true
@@ -191,6 +197,7 @@ export type UserGroupByOutputType = {
   fullName: string
   locale: $Enums.Locale
   status: $Enums.UserStatus
+  isSuperAdmin: boolean
   passwordHash: string | null
   passwordAlgo: string | null
   lastLoginAt: Date | null
@@ -226,6 +233,7 @@ export type UserWhereInput = {
   fullName?: Prisma.StringFilter<"User"> | string
   locale?: Prisma.EnumLocaleFilter<"User"> | $Enums.Locale
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFilter<"User"> | boolean
   passwordHash?: Prisma.StringNullableFilter<"User"> | string | null
   passwordAlgo?: Prisma.StringNullableFilter<"User"> | string | null
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
@@ -242,6 +250,7 @@ export type UserOrderByWithRelationInput = {
   fullName?: Prisma.SortOrder
   locale?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isSuperAdmin?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordAlgo?: Prisma.SortOrderInput | Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -261,6 +270,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   fullName?: Prisma.StringFilter<"User"> | string
   locale?: Prisma.EnumLocaleFilter<"User"> | $Enums.Locale
   status?: Prisma.EnumUserStatusFilter<"User"> | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFilter<"User"> | boolean
   passwordHash?: Prisma.StringNullableFilter<"User"> | string | null
   passwordAlgo?: Prisma.StringNullableFilter<"User"> | string | null
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
@@ -277,6 +287,7 @@ export type UserOrderByWithAggregationInput = {
   fullName?: Prisma.SortOrder
   locale?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isSuperAdmin?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder
   passwordAlgo?: Prisma.SortOrderInput | Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -297,6 +308,7 @@ export type UserScalarWhereWithAggregatesInput = {
   fullName?: Prisma.StringWithAggregatesFilter<"User"> | string
   locale?: Prisma.EnumLocaleWithAggregatesFilter<"User"> | $Enums.Locale
   status?: Prisma.EnumUserStatusWithAggregatesFilter<"User"> | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   passwordHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   passwordAlgo?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   lastLoginAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
@@ -311,6 +323,7 @@ export type UserCreateInput = {
   fullName: string
   locale?: $Enums.Locale
   status?: $Enums.UserStatus
+  isSuperAdmin?: boolean
   passwordHash?: string | null
   passwordAlgo?: string | null
   lastLoginAt?: Date | string | null
@@ -327,6 +340,7 @@ export type UserUncheckedCreateInput = {
   fullName: string
   locale?: $Enums.Locale
   status?: $Enums.UserStatus
+  isSuperAdmin?: boolean
   passwordHash?: string | null
   passwordAlgo?: string | null
   lastLoginAt?: Date | string | null
@@ -343,6 +357,7 @@ export type UserUpdateInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   locale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordAlgo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -359,6 +374,7 @@ export type UserUncheckedUpdateInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   locale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordAlgo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -375,6 +391,7 @@ export type UserCreateManyInput = {
   fullName: string
   locale?: $Enums.Locale
   status?: $Enums.UserStatus
+  isSuperAdmin?: boolean
   passwordHash?: string | null
   passwordAlgo?: string | null
   lastLoginAt?: Date | string | null
@@ -389,6 +406,7 @@ export type UserUpdateManyMutationInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   locale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordAlgo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -403,6 +421,7 @@ export type UserUncheckedUpdateManyInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   locale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordAlgo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -417,6 +436,7 @@ export type UserCountOrderByAggregateInput = {
   fullName?: Prisma.SortOrder
   locale?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isSuperAdmin?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   passwordAlgo?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
@@ -431,6 +451,7 @@ export type UserMaxOrderByAggregateInput = {
   fullName?: Prisma.SortOrder
   locale?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isSuperAdmin?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   passwordAlgo?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
@@ -445,6 +466,7 @@ export type UserMinOrderByAggregateInput = {
   fullName?: Prisma.SortOrder
   locale?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  isSuperAdmin?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   passwordAlgo?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
@@ -463,6 +485,10 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type EnumUserStatusFieldUpdateOperationsInput = {
   set?: $Enums.UserStatus
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
@@ -504,6 +530,7 @@ export type UserCreateWithoutMembershipsInput = {
   fullName: string
   locale?: $Enums.Locale
   status?: $Enums.UserStatus
+  isSuperAdmin?: boolean
   passwordHash?: string | null
   passwordAlgo?: string | null
   lastLoginAt?: Date | string | null
@@ -519,6 +546,7 @@ export type UserUncheckedCreateWithoutMembershipsInput = {
   fullName: string
   locale?: $Enums.Locale
   status?: $Enums.UserStatus
+  isSuperAdmin?: boolean
   passwordHash?: string | null
   passwordAlgo?: string | null
   lastLoginAt?: Date | string | null
@@ -550,6 +578,7 @@ export type UserUpdateWithoutMembershipsInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   locale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordAlgo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -565,6 +594,7 @@ export type UserUncheckedUpdateWithoutMembershipsInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   locale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordAlgo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -580,6 +610,7 @@ export type UserCreateWithoutSessionsInput = {
   fullName: string
   locale?: $Enums.Locale
   status?: $Enums.UserStatus
+  isSuperAdmin?: boolean
   passwordHash?: string | null
   passwordAlgo?: string | null
   lastLoginAt?: Date | string | null
@@ -595,6 +626,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   fullName: string
   locale?: $Enums.Locale
   status?: $Enums.UserStatus
+  isSuperAdmin?: boolean
   passwordHash?: string | null
   passwordAlgo?: string | null
   lastLoginAt?: Date | string | null
@@ -626,6 +658,7 @@ export type UserUpdateWithoutSessionsInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   locale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordAlgo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -641,6 +674,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   fullName?: Prisma.StringFieldUpdateOperationsInput | string
   locale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  isSuperAdmin?: Prisma.BoolFieldUpdateOperationsInput | boolean
   passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   passwordAlgo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -696,6 +730,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   fullName?: boolean
   locale?: boolean
   status?: boolean
+  isSuperAdmin?: boolean
   passwordHash?: boolean
   passwordAlgo?: boolean
   lastLoginAt?: boolean
@@ -713,6 +748,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   fullName?: boolean
   locale?: boolean
   status?: boolean
+  isSuperAdmin?: boolean
   passwordHash?: boolean
   passwordAlgo?: boolean
   lastLoginAt?: boolean
@@ -727,6 +763,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   fullName?: boolean
   locale?: boolean
   status?: boolean
+  isSuperAdmin?: boolean
   passwordHash?: boolean
   passwordAlgo?: boolean
   lastLoginAt?: boolean
@@ -741,6 +778,7 @@ export type UserSelectScalar = {
   fullName?: boolean
   locale?: boolean
   status?: boolean
+  isSuperAdmin?: boolean
   passwordHash?: boolean
   passwordAlgo?: boolean
   lastLoginAt?: boolean
@@ -748,7 +786,7 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "phoneE164" | "fullName" | "locale" | "status" | "passwordHash" | "passwordAlgo" | "lastLoginAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "phoneE164" | "fullName" | "locale" | "status" | "isSuperAdmin" | "passwordHash" | "passwordAlgo" | "lastLoginAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | Prisma.User$membershipsArgs<ExtArgs>
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
@@ -770,6 +808,13 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     fullName: string
     locale: $Enums.Locale
     status: $Enums.UserStatus
+    /**
+     * Platform owner. Holds every permission at every pharmacy and is the only
+     * account that may create pharmacies or pharmacy accounts. Orthogonal to
+     * `PharmacyMembership`: a super admin keeps their own membership rows, and
+     * may open a pharmacy they are not a member of.
+     */
+    isSuperAdmin: boolean
     passwordHash: string | null
     /**
      * scrypt parameters actually used, so hashes can be upgraded over time
@@ -1210,6 +1255,7 @@ export interface UserFieldRefs {
   readonly fullName: Prisma.FieldRef<"User", 'String'>
   readonly locale: Prisma.FieldRef<"User", 'Locale'>
   readonly status: Prisma.FieldRef<"User", 'UserStatus'>
+  readonly isSuperAdmin: Prisma.FieldRef<"User", 'Boolean'>
   readonly passwordHash: Prisma.FieldRef<"User", 'String'>
   readonly passwordAlgo: Prisma.FieldRef<"User", 'String'>
   readonly lastLoginAt: Prisma.FieldRef<"User", 'DateTime'>

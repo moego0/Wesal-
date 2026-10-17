@@ -6,6 +6,8 @@ import { isAdminEnabled } from "@/server/admin/flag";
 import { logoutAction } from "@/server/auth/actions";
 import { requireSessionUser } from "@/server/auth/current-user";
 import { hasPermission, type Permission } from "@/server/auth/rbac";
+import { listSwitchablePharmacies } from "@/server/platform/admin";
+import { switchPharmacyAction } from "@/server/platform/actions";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 
 /**
@@ -17,11 +19,21 @@ import { LocaleSwitcher } from "./LocaleSwitcher";
  */
 
 const NAV_ITEMS: ReadonlyArray<{
-  key: "dashboard" | "patients" | "followUps" | "messages" | "reports" | "settings" | "operations";
+  key:
+    | "dashboard"
+    | "patients"
+    | "followUps"
+    | "messages"
+    | "reports"
+    | "settings"
+    | "operations"
+    | "platform";
   href: string;
   permission?: Permission;
   /** Also requires `ENABLE_ADMIN`. See the filter in `SessionBar`. */
   adminOnly?: boolean;
+  /** Platform owner only. Nobody else sees the link or can load the page. */
+  superAdminOnly?: boolean;
 }> = [
   { key: "dashboard", href: "/" },
   { key: "patients", href: "/patients" },
@@ -42,6 +54,9 @@ const NAV_ITEMS: ReadonlyArray<{
   // the flag too. A pharmacist admin on a deployment that never turned the
   // console on would otherwise be shown a link that 404s.
   { key: "operations", href: "/admin", permission: "settings:manage", adminOnly: true },
+  // No permission: `isSuperAdmin` is not a permission any role can hold, and
+  // the platform pages check it again before rendering anything.
+  { key: "platform", href: "/platform", superAdminOnly: true },
 ];
 
 export default async function AppLayout({
@@ -121,8 +136,13 @@ async function SessionBar({ locale }: { locale: string }) {
   const items = NAV_ITEMS.filter(
     (item) =>
       (item.permission === undefined || hasPermission(user, item.permission)) &&
-      (item.adminOnly !== true || isAdminEnabled()),
+      (item.adminOnly !== true || isAdminEnabled()) &&
+      (item.superAdminOnly !== true || user.isSuperAdmin),
   );
+
+  // Only a platform owner may list every pharmacy. The query itself re-checks,
+  // so a missed condition here is a thrown error rather than a leaked list.
+  const switchable = user.isSuperAdmin ? await listSwitchablePharmacies(user) : [];
 
   return (
     <>
@@ -143,17 +163,51 @@ async function SessionBar({ locale }: { locale: string }) {
 
       <div className="ms-auto flex flex-wrap items-center gap-x-3 gap-y-2">
         {/* Which pharmacy's data this is. A pharmacist covering a shift at a
-            second branch needs to see that at a glance, not infer it. */}
-        <span className="hidden items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 sm:inline-flex dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          <span aria-hidden className="size-1.5 rounded-full bg-teal-500" />
-          {user.pharmacyName}
-        </span>
+            second branch needs to see that at a glance, not infer it.
+
+            For the platform owner it is a control rather than a label: every
+            page below is scoped to the selected pharmacy, and opening another
+            one repoints the session (audited in that pharmacy's log). */}
+        {user.isSuperAdmin && switchable.length > 0 ? (
+          <form action={switchPharmacyAction} className="flex items-center gap-1.5">
+            <input type="hidden" name="locale" value={locale} />
+            <label htmlFor="pharmacy-switch" className="sr-only">
+              {tNav("pharmacyLabel")}
+            </label>
+            <select
+              id="pharmacy-switch"
+              name="pharmacyId"
+              defaultValue={user.pharmacyId}
+              className="max-w-44 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            >
+              {switchable.map((pharmacy) => (
+                <option key={pharmacy.id} value={pharmacy.id}>
+                  {pharmacy.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:outline-none dark:border-slate-700 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+            >
+              {tNav("switchPharmacy")}
+            </button>
+          </form>
+        ) : (
+          <span className="hidden items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-600 sm:inline-flex dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <span aria-hidden className="size-1.5 rounded-full bg-teal-500" />
+            {user.pharmacyName}
+          </span>
+        )}
 
         <span className="text-sm">
           <span className="font-medium text-slate-900 dark:text-slate-100">
             {user.fullName}
           </span>
-          <span className="text-slate-500 dark:text-slate-400"> · {tRoles(user.role)}</span>
+          <span className="text-slate-500 dark:text-slate-400">
+            {" · "}
+            {user.isSuperAdmin ? tRoles("SUPER_ADMIN") : tRoles(user.role)}
+          </span>
         </span>
 
         <LocaleSwitcher />
