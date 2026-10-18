@@ -40,9 +40,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nextjs
 
-# Copy runtime assets and application files
-COPY --from=builder /app/public            ./public
-COPY --from=builder /app/.next             ./.next
+# Copy runtime assets and application files.
+#
+# `--chown` matters for `.next`: `next start` writes the image-optimizer cache
+# under `.next/cache` at request time, and files copied as root are not writable
+# by the `nextjs` user. Without it every optimized image logs
+# `EACCES: mkdir '/app/.next/cache/images'` and the cache never fills.
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next  ./.next
 COPY --from=builder /app/node_modules      ./node_modules
 COPY --from=builder /app/package.json      ./package.json
 COPY --from=builder /app/next.config.ts    ./next.config.ts
