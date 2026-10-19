@@ -71,7 +71,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Default: run the Next.js web server.
-# Override the command in docker-compose to run the worker instead:
-#   command: ["npm", "run", "worker"]
-CMD ["npm", "run", "start"]
+# Run both Next.js and the background worker concurrently in the same container.
+CMD ["node", "scripts/start-all.mjs"]

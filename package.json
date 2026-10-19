@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:all": "node scripts/start-all.mjs",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "worker": "node --dns-result-order=ipv4first --import tsx src/worker/index.ts",
