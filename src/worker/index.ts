@@ -25,6 +25,7 @@ import {
 import { materializeDueSchedules } from "@/server/scheduling/materialize";
 import { drainInbound } from "@/server/responses/processInbound";
 import { ensureSystemRules, evaluateRulesSweep } from "@/server/rules/evaluator";
+import { sweepRefills } from "@/server/scheduling/refills";
 import { enqueueSendReminder } from "@/server/queue";
 
 /**
@@ -102,6 +103,8 @@ const SWEEPS: Record<SweepName, SweepHandler> = {
   materialize: () => materializeDueSchedules(),
 
   rulesSweep: () => evaluateRulesSweep(),
+
+  refillSweep: () => sweepRefills(),
 
   heartbeat: () => checkSweepHealth(),
 };

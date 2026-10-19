@@ -339,30 +339,95 @@ async function SettingsBody({
                 </select>
               </Field>
 
+              <Field
+                label={locale === "ar" ? "صيدلية تعمل على مدار 24 ساعة" : "24-Hour Pharmacy"}
+                htmlFor="pharmacy-24h"
+                hint={
+                  locale === "ar"
+                    ? "إذا تم التفعيل، تعمل الصيدلية على مدار 24/7 دون التقيد بساعات عمل محددة"
+                    : "If enabled, the pharmacy operates 24/7 without operational hour restrictions"
+                }
+              >
+                <select
+                  id="pharmacy-24h"
+                  name="is24Hours"
+                  defaultValue={profile.is24Hours ? "true" : "false"}
+                  className={selectClass}
+                >
+                  <option value="false">{locale === "ar" ? "معطل (تحديد ساعات العمل)" : "OFF (Set Operating Hours)"}</option>
+                  <option value="true">{locale === "ar" ? "مفعل (يعمل 24 ساعة)" : "ON (Operates 24/7)"}</option>
+                </select>
+              </Field>
+
               <div className="grid grid-cols-2 gap-3">
-                <Field label={t("profile.quietStart")} htmlFor="pharmacy-quiet-start">
+                <Field
+                  label={locale === "ar" ? "ساعة فتح الصيدلية" : "Opening Hours"}
+                  htmlFor="pharmacy-op-start"
+                  hint={locale === "ar" ? "بداية استقبال الإشعارات التشغيلية" : "Start of operational hours"}
+                >
                   <input
-                    id="pharmacy-quiet-start"
-                    name="quietHoursStart"
+                    id="pharmacy-op-start"
+                    name="operatingHoursStart"
                     type="time"
                     required
                     dir="ltr"
-                    defaultValue={profile.quietHoursStart}
+                    defaultValue={profile.operatingHoursStart ?? "08:00"}
                     className={inputClass}
                   />
                 </Field>
                 <Field
-                  label={t("profile.quietEnd")}
-                  htmlFor="pharmacy-quiet-end"
-                  hint={t("profile.quietHint")}
+                  label={locale === "ar" ? "ساعة إغلاق الصيدلية" : "Closing Hours"}
+                  htmlFor="pharmacy-op-end"
+                  hint={locale === "ar" ? "نهاية ساعات العمل اليومية" : "End of daily operations"}
                 >
                   <input
-                    id="pharmacy-quiet-end"
-                    name="quietHoursEnd"
+                    id="pharmacy-op-end"
+                    name="operatingHoursEnd"
                     type="time"
                     required
                     dir="ltr"
-                    defaultValue={profile.quietHoursEnd}
+                    defaultValue={profile.operatingHoursEnd ?? "22:00"}
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+
+              {/* Hidden quiet hours preserved for background compatibility */}
+              <input type="hidden" name="quietHoursStart" value={profile.quietHoursStart} />
+              <input type="hidden" name="quietHoursEnd" value={profile.quietHoursEnd} />
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label={locale === "ar" ? "مهلة تنبيه تجديد الصرف (أيام)" : "Refill Warning Lead (Days)"}
+                  htmlFor="refill-lead-days"
+                  hint={locale === "ar" ? "إشعار الصيدلية قبل نفاد الدواء (افتراضي 5 أيام)" : "Notify pharmacy days before runout (default 5)"}
+                >
+                  <input
+                    id="refill-lead-days"
+                    name="refillLeadDays"
+                    type="number"
+                    min={1}
+                    max={30}
+                    required
+                    dir="ltr"
+                    defaultValue={profile.refillLeadDays ?? 5}
+                    className={inputClass}
+                  />
+                </Field>
+                <Field
+                  label={locale === "ar" ? "مهلة التنبيه العاجل (أيام)" : "Urgent Alert Lead (Days)"}
+                  htmlFor="refill-urgent-days"
+                  hint={locale === "ar" ? "تنبيه عاجل قبل النفاد الوشيك (افتراضي 1 يوم)" : "Urgent alert before runout (default 1)"}
+                >
+                  <input
+                    id="refill-urgent-days"
+                    name="refillUrgentDays"
+                    type="number"
+                    min={1}
+                    max={14}
+                    required
+                    dir="ltr"
+                    defaultValue={profile.refillUrgentDays ?? 1}
                     className={inputClass}
                   />
                 </Field>

@@ -20,8 +20,24 @@ export type MedicationRecordModel = runtime.Types.Result.DefaultSelection<Prisma
 
 export type AggregateMedicationRecord = {
   _count: MedicationRecordCountAggregateOutputType | null
+  _avg: MedicationRecordAvgAggregateOutputType | null
+  _sum: MedicationRecordSumAggregateOutputType | null
   _min: MedicationRecordMinAggregateOutputType | null
   _max: MedicationRecordMaxAggregateOutputType | null
+}
+
+export type MedicationRecordAvgAggregateOutputType = {
+  unitsPerPackage: number | null
+  unitsPerDose: runtime.Decimal | null
+  dosesPerDay: number | null
+  treatmentDurationValue: number | null
+}
+
+export type MedicationRecordSumAggregateOutputType = {
+  unitsPerPackage: number | null
+  unitsPerDose: runtime.Decimal | null
+  dosesPerDay: number | null
+  treatmentDurationValue: number | null
 }
 
 export type MedicationRecordMinAggregateOutputType = {
@@ -36,6 +52,13 @@ export type MedicationRecordMinAggregateOutputType = {
   instructionsTextAr: string | null
   instructionsTextEn: string | null
   prescriberText: string | null
+  prescriberDoctorName: string | null
+  prescriberDoctorPhone: string | null
+  unitsPerPackage: number | null
+  unitsPerDose: runtime.Decimal | null
+  dosesPerDay: number | null
+  treatmentDurationValue: number | null
+  treatmentDurationUnit: string | null
   indicationText: string | null
   status: $Enums.MedicationStatus | null
   startedOn: Date | null
@@ -59,6 +82,13 @@ export type MedicationRecordMaxAggregateOutputType = {
   instructionsTextAr: string | null
   instructionsTextEn: string | null
   prescriberText: string | null
+  prescriberDoctorName: string | null
+  prescriberDoctorPhone: string | null
+  unitsPerPackage: number | null
+  unitsPerDose: runtime.Decimal | null
+  dosesPerDay: number | null
+  treatmentDurationValue: number | null
+  treatmentDurationUnit: string | null
   indicationText: string | null
   status: $Enums.MedicationStatus | null
   startedOn: Date | null
@@ -82,6 +112,13 @@ export type MedicationRecordCountAggregateOutputType = {
   instructionsTextAr: number
   instructionsTextEn: number
   prescriberText: number
+  prescriberDoctorName: number
+  prescriberDoctorPhone: number
+  unitsPerPackage: number
+  unitsPerDose: number
+  dosesPerDay: number
+  treatmentDurationValue: number
+  treatmentDurationUnit: number
   indicationText: number
   status: number
   startedOn: number
@@ -95,6 +132,20 @@ export type MedicationRecordCountAggregateOutputType = {
 }
 
 
+export type MedicationRecordAvgAggregateInputType = {
+  unitsPerPackage?: true
+  unitsPerDose?: true
+  dosesPerDay?: true
+  treatmentDurationValue?: true
+}
+
+export type MedicationRecordSumAggregateInputType = {
+  unitsPerPackage?: true
+  unitsPerDose?: true
+  dosesPerDay?: true
+  treatmentDurationValue?: true
+}
+
 export type MedicationRecordMinAggregateInputType = {
   id?: true
   pharmacyId?: true
@@ -107,6 +158,13 @@ export type MedicationRecordMinAggregateInputType = {
   instructionsTextAr?: true
   instructionsTextEn?: true
   prescriberText?: true
+  prescriberDoctorName?: true
+  prescriberDoctorPhone?: true
+  unitsPerPackage?: true
+  unitsPerDose?: true
+  dosesPerDay?: true
+  treatmentDurationValue?: true
+  treatmentDurationUnit?: true
   indicationText?: true
   status?: true
   startedOn?: true
@@ -130,6 +188,13 @@ export type MedicationRecordMaxAggregateInputType = {
   instructionsTextAr?: true
   instructionsTextEn?: true
   prescriberText?: true
+  prescriberDoctorName?: true
+  prescriberDoctorPhone?: true
+  unitsPerPackage?: true
+  unitsPerDose?: true
+  dosesPerDay?: true
+  treatmentDurationValue?: true
+  treatmentDurationUnit?: true
   indicationText?: true
   status?: true
   startedOn?: true
@@ -153,6 +218,13 @@ export type MedicationRecordCountAggregateInputType = {
   instructionsTextAr?: true
   instructionsTextEn?: true
   prescriberText?: true
+  prescriberDoctorName?: true
+  prescriberDoctorPhone?: true
+  unitsPerPackage?: true
+  unitsPerDose?: true
+  dosesPerDay?: true
+  treatmentDurationValue?: true
+  treatmentDurationUnit?: true
   indicationText?: true
   status?: true
   startedOn?: true
@@ -203,6 +275,18 @@ export type MedicationRecordAggregateArgs<ExtArgs extends runtime.Types.Extensio
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: MedicationRecordAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: MedicationRecordSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: MedicationRecordMinAggregateInputType
@@ -233,6 +317,8 @@ export type MedicationRecordGroupByArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   _count?: MedicationRecordCountAggregateInputType | true
+  _avg?: MedicationRecordAvgAggregateInputType
+  _sum?: MedicationRecordSumAggregateInputType
   _min?: MedicationRecordMinAggregateInputType
   _max?: MedicationRecordMaxAggregateInputType
 }
@@ -249,6 +335,13 @@ export type MedicationRecordGroupByOutputType = {
   instructionsTextAr: string | null
   instructionsTextEn: string | null
   prescriberText: string | null
+  prescriberDoctorName: string | null
+  prescriberDoctorPhone: string | null
+  unitsPerPackage: number | null
+  unitsPerDose: runtime.Decimal | null
+  dosesPerDay: number | null
+  treatmentDurationValue: number | null
+  treatmentDurationUnit: string | null
   indicationText: string | null
   status: $Enums.MedicationStatus
   startedOn: Date
@@ -259,6 +352,8 @@ export type MedicationRecordGroupByOutputType = {
   updatedAt: Date
   createdByUserId: string | null
   _count: MedicationRecordCountAggregateOutputType | null
+  _avg: MedicationRecordAvgAggregateOutputType | null
+  _sum: MedicationRecordSumAggregateOutputType | null
   _min: MedicationRecordMinAggregateOutputType | null
   _max: MedicationRecordMaxAggregateOutputType | null
 }
@@ -293,6 +388,13 @@ export type MedicationRecordWhereInput = {
   instructionsTextAr?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   instructionsTextEn?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   prescriberText?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  prescriberDoctorName?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  prescriberDoctorPhone?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  unitsPerPackage?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  unitsPerDose?: Prisma.DecimalNullableFilter<"MedicationRecord"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  treatmentDurationValue?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  treatmentDurationUnit?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   indicationText?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   status?: Prisma.EnumMedicationStatusFilter<"MedicationRecord"> | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFilter<"MedicationRecord"> | Date | string
@@ -322,6 +424,13 @@ export type MedicationRecordOrderByWithRelationInput = {
   instructionsTextAr?: Prisma.SortOrderInput | Prisma.SortOrder
   instructionsTextEn?: Prisma.SortOrderInput | Prisma.SortOrder
   prescriberText?: Prisma.SortOrderInput | Prisma.SortOrder
+  prescriberDoctorName?: Prisma.SortOrderInput | Prisma.SortOrder
+  prescriberDoctorPhone?: Prisma.SortOrderInput | Prisma.SortOrder
+  unitsPerPackage?: Prisma.SortOrderInput | Prisma.SortOrder
+  unitsPerDose?: Prisma.SortOrderInput | Prisma.SortOrder
+  dosesPerDay?: Prisma.SortOrderInput | Prisma.SortOrder
+  treatmentDurationValue?: Prisma.SortOrderInput | Prisma.SortOrder
+  treatmentDurationUnit?: Prisma.SortOrderInput | Prisma.SortOrder
   indicationText?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   startedOn?: Prisma.SortOrder
@@ -354,6 +463,13 @@ export type MedicationRecordWhereUniqueInput = Prisma.AtLeast<{
   instructionsTextAr?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   instructionsTextEn?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   prescriberText?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  prescriberDoctorName?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  prescriberDoctorPhone?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  unitsPerPackage?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  unitsPerDose?: Prisma.DecimalNullableFilter<"MedicationRecord"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  treatmentDurationValue?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  treatmentDurationUnit?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   indicationText?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   status?: Prisma.EnumMedicationStatusFilter<"MedicationRecord"> | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFilter<"MedicationRecord"> | Date | string
@@ -383,6 +499,13 @@ export type MedicationRecordOrderByWithAggregationInput = {
   instructionsTextAr?: Prisma.SortOrderInput | Prisma.SortOrder
   instructionsTextEn?: Prisma.SortOrderInput | Prisma.SortOrder
   prescriberText?: Prisma.SortOrderInput | Prisma.SortOrder
+  prescriberDoctorName?: Prisma.SortOrderInput | Prisma.SortOrder
+  prescriberDoctorPhone?: Prisma.SortOrderInput | Prisma.SortOrder
+  unitsPerPackage?: Prisma.SortOrderInput | Prisma.SortOrder
+  unitsPerDose?: Prisma.SortOrderInput | Prisma.SortOrder
+  dosesPerDay?: Prisma.SortOrderInput | Prisma.SortOrder
+  treatmentDurationValue?: Prisma.SortOrderInput | Prisma.SortOrder
+  treatmentDurationUnit?: Prisma.SortOrderInput | Prisma.SortOrder
   indicationText?: Prisma.SortOrderInput | Prisma.SortOrder
   status?: Prisma.SortOrder
   startedOn?: Prisma.SortOrder
@@ -393,8 +516,10 @@ export type MedicationRecordOrderByWithAggregationInput = {
   updatedAt?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.MedicationRecordCountOrderByAggregateInput
+  _avg?: Prisma.MedicationRecordAvgOrderByAggregateInput
   _max?: Prisma.MedicationRecordMaxOrderByAggregateInput
   _min?: Prisma.MedicationRecordMinOrderByAggregateInput
+  _sum?: Prisma.MedicationRecordSumOrderByAggregateInput
 }
 
 export type MedicationRecordScalarWhereWithAggregatesInput = {
@@ -412,6 +537,13 @@ export type MedicationRecordScalarWhereWithAggregatesInput = {
   instructionsTextAr?: Prisma.StringNullableWithAggregatesFilter<"MedicationRecord"> | string | null
   instructionsTextEn?: Prisma.StringNullableWithAggregatesFilter<"MedicationRecord"> | string | null
   prescriberText?: Prisma.StringNullableWithAggregatesFilter<"MedicationRecord"> | string | null
+  prescriberDoctorName?: Prisma.StringNullableWithAggregatesFilter<"MedicationRecord"> | string | null
+  prescriberDoctorPhone?: Prisma.StringNullableWithAggregatesFilter<"MedicationRecord"> | string | null
+  unitsPerPackage?: Prisma.IntNullableWithAggregatesFilter<"MedicationRecord"> | number | null
+  unitsPerDose?: Prisma.DecimalNullableWithAggregatesFilter<"MedicationRecord"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.IntNullableWithAggregatesFilter<"MedicationRecord"> | number | null
+  treatmentDurationValue?: Prisma.IntNullableWithAggregatesFilter<"MedicationRecord"> | number | null
+  treatmentDurationUnit?: Prisma.StringNullableWithAggregatesFilter<"MedicationRecord"> | string | null
   indicationText?: Prisma.StringNullableWithAggregatesFilter<"MedicationRecord"> | string | null
   status?: Prisma.EnumMedicationStatusWithAggregatesFilter<"MedicationRecord"> | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeWithAggregatesFilter<"MedicationRecord"> | Date | string
@@ -434,6 +566,13 @@ export type MedicationRecordCreateInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -463,6 +602,13 @@ export type MedicationRecordUncheckedCreateInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -490,6 +636,13 @@ export type MedicationRecordUpdateInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -519,6 +672,13 @@ export type MedicationRecordUncheckedUpdateInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -547,6 +707,13 @@ export type MedicationRecordCreateManyInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -569,6 +736,13 @@ export type MedicationRecordUpdateManyMutationInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -592,6 +766,13 @@ export type MedicationRecordUncheckedUpdateManyInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -625,6 +806,13 @@ export type MedicationRecordCountOrderByAggregateInput = {
   instructionsTextAr?: Prisma.SortOrder
   instructionsTextEn?: Prisma.SortOrder
   prescriberText?: Prisma.SortOrder
+  prescriberDoctorName?: Prisma.SortOrder
+  prescriberDoctorPhone?: Prisma.SortOrder
+  unitsPerPackage?: Prisma.SortOrder
+  unitsPerDose?: Prisma.SortOrder
+  dosesPerDay?: Prisma.SortOrder
+  treatmentDurationValue?: Prisma.SortOrder
+  treatmentDurationUnit?: Prisma.SortOrder
   indicationText?: Prisma.SortOrder
   status?: Prisma.SortOrder
   startedOn?: Prisma.SortOrder
@@ -634,6 +822,13 @@ export type MedicationRecordCountOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
+}
+
+export type MedicationRecordAvgOrderByAggregateInput = {
+  unitsPerPackage?: Prisma.SortOrder
+  unitsPerDose?: Prisma.SortOrder
+  dosesPerDay?: Prisma.SortOrder
+  treatmentDurationValue?: Prisma.SortOrder
 }
 
 export type MedicationRecordMaxOrderByAggregateInput = {
@@ -648,6 +843,13 @@ export type MedicationRecordMaxOrderByAggregateInput = {
   instructionsTextAr?: Prisma.SortOrder
   instructionsTextEn?: Prisma.SortOrder
   prescriberText?: Prisma.SortOrder
+  prescriberDoctorName?: Prisma.SortOrder
+  prescriberDoctorPhone?: Prisma.SortOrder
+  unitsPerPackage?: Prisma.SortOrder
+  unitsPerDose?: Prisma.SortOrder
+  dosesPerDay?: Prisma.SortOrder
+  treatmentDurationValue?: Prisma.SortOrder
+  treatmentDurationUnit?: Prisma.SortOrder
   indicationText?: Prisma.SortOrder
   status?: Prisma.SortOrder
   startedOn?: Prisma.SortOrder
@@ -671,6 +873,13 @@ export type MedicationRecordMinOrderByAggregateInput = {
   instructionsTextAr?: Prisma.SortOrder
   instructionsTextEn?: Prisma.SortOrder
   prescriberText?: Prisma.SortOrder
+  prescriberDoctorName?: Prisma.SortOrder
+  prescriberDoctorPhone?: Prisma.SortOrder
+  unitsPerPackage?: Prisma.SortOrder
+  unitsPerDose?: Prisma.SortOrder
+  dosesPerDay?: Prisma.SortOrder
+  treatmentDurationValue?: Prisma.SortOrder
+  treatmentDurationUnit?: Prisma.SortOrder
   indicationText?: Prisma.SortOrder
   status?: Prisma.SortOrder
   startedOn?: Prisma.SortOrder
@@ -680,6 +889,13 @@ export type MedicationRecordMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   createdByUserId?: Prisma.SortOrder
+}
+
+export type MedicationRecordSumOrderByAggregateInput = {
+  unitsPerPackage?: Prisma.SortOrder
+  unitsPerDose?: Prisma.SortOrder
+  dosesPerDay?: Prisma.SortOrder
+  treatmentDurationValue?: Prisma.SortOrder
 }
 
 export type MedicationRecordScalarRelationFilter = {
@@ -732,6 +948,22 @@ export type MedicationRecordUncheckedUpdateManyWithoutPatientNestedInput = {
   update?: Prisma.MedicationRecordUpdateWithWhereUniqueWithoutPatientInput | Prisma.MedicationRecordUpdateWithWhereUniqueWithoutPatientInput[]
   updateMany?: Prisma.MedicationRecordUpdateManyWithWhereWithoutPatientInput | Prisma.MedicationRecordUpdateManyWithWhereWithoutPatientInput[]
   deleteMany?: Prisma.MedicationRecordScalarWhereInput | Prisma.MedicationRecordScalarWhereInput[]
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type NullableDecimalFieldUpdateOperationsInput = {
+  set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
 export type EnumMedicationStatusFieldUpdateOperationsInput = {
@@ -823,6 +1055,13 @@ export type MedicationRecordCreateWithoutPatientInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -850,6 +1089,13 @@ export type MedicationRecordUncheckedCreateWithoutPatientInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -907,6 +1153,13 @@ export type MedicationRecordScalarWhereInput = {
   instructionsTextAr?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   instructionsTextEn?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   prescriberText?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  prescriberDoctorName?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  prescriberDoctorPhone?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
+  unitsPerPackage?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  unitsPerDose?: Prisma.DecimalNullableFilter<"MedicationRecord"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  treatmentDurationValue?: Prisma.IntNullableFilter<"MedicationRecord"> | number | null
+  treatmentDurationUnit?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   indicationText?: Prisma.StringNullableFilter<"MedicationRecord"> | string | null
   status?: Prisma.EnumMedicationStatusFilter<"MedicationRecord"> | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFilter<"MedicationRecord"> | Date | string
@@ -929,6 +1182,13 @@ export type MedicationRecordCreateWithoutSchedulesInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -957,6 +1217,13 @@ export type MedicationRecordUncheckedCreateWithoutSchedulesInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -999,6 +1266,13 @@ export type MedicationRecordUpdateWithoutSchedulesInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1027,6 +1301,13 @@ export type MedicationRecordUncheckedUpdateWithoutSchedulesInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1053,6 +1334,13 @@ export type MedicationRecordCreateWithoutEventsInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1081,6 +1369,13 @@ export type MedicationRecordUncheckedCreateWithoutEventsInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1123,6 +1418,13 @@ export type MedicationRecordUpdateWithoutEventsInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1151,6 +1453,13 @@ export type MedicationRecordUncheckedUpdateWithoutEventsInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1177,6 +1486,13 @@ export type MedicationRecordCreateWithoutCasesInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1205,6 +1521,13 @@ export type MedicationRecordUncheckedCreateWithoutCasesInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1247,6 +1570,13 @@ export type MedicationRecordUpdateWithoutCasesInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1275,6 +1605,13 @@ export type MedicationRecordUncheckedUpdateWithoutCasesInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1301,6 +1638,13 @@ export type MedicationRecordCreateWithoutInterventionsInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1329,6 +1673,13 @@ export type MedicationRecordUncheckedCreateWithoutInterventionsInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1371,6 +1722,13 @@ export type MedicationRecordUpdateWithoutInterventionsInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1399,6 +1757,13 @@ export type MedicationRecordUncheckedUpdateWithoutInterventionsInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1425,6 +1790,13 @@ export type MedicationRecordCreateWithoutRefillsInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1453,6 +1825,13 @@ export type MedicationRecordUncheckedCreateWithoutRefillsInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1495,6 +1874,13 @@ export type MedicationRecordUpdateWithoutRefillsInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1523,6 +1909,13 @@ export type MedicationRecordUncheckedUpdateWithoutRefillsInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1549,6 +1942,13 @@ export type MedicationRecordCreateManyPatientInput = {
   instructionsTextAr?: string | null
   instructionsTextEn?: string | null
   prescriberText?: string | null
+  prescriberDoctorName?: string | null
+  prescriberDoctorPhone?: string | null
+  unitsPerPackage?: number | null
+  unitsPerDose?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: number | null
+  treatmentDurationValue?: number | null
+  treatmentDurationUnit?: string | null
   indicationText?: string | null
   status?: $Enums.MedicationStatus
   startedOn: Date | string
@@ -1571,6 +1971,13 @@ export type MedicationRecordUpdateWithoutPatientInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1598,6 +2005,13 @@ export type MedicationRecordUncheckedUpdateWithoutPatientInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1625,6 +2039,13 @@ export type MedicationRecordUncheckedUpdateManyWithoutPatientInput = {
   instructionsTextAr?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   instructionsTextEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   prescriberText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  prescriberDoctorPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unitsPerPackage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  unitsPerDose?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  dosesPerDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationValue?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  treatmentDurationUnit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   indicationText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.EnumMedicationStatusFieldUpdateOperationsInput | $Enums.MedicationStatus
   startedOn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1715,6 +2136,13 @@ export type MedicationRecordSelect<ExtArgs extends runtime.Types.Extensions.Inte
   instructionsTextAr?: boolean
   instructionsTextEn?: boolean
   prescriberText?: boolean
+  prescriberDoctorName?: boolean
+  prescriberDoctorPhone?: boolean
+  unitsPerPackage?: boolean
+  unitsPerDose?: boolean
+  dosesPerDay?: boolean
+  treatmentDurationValue?: boolean
+  treatmentDurationUnit?: boolean
   indicationText?: boolean
   status?: boolean
   startedOn?: boolean
@@ -1745,6 +2173,13 @@ export type MedicationRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   instructionsTextAr?: boolean
   instructionsTextEn?: boolean
   prescriberText?: boolean
+  prescriberDoctorName?: boolean
+  prescriberDoctorPhone?: boolean
+  unitsPerPackage?: boolean
+  unitsPerDose?: boolean
+  dosesPerDay?: boolean
+  treatmentDurationValue?: boolean
+  treatmentDurationUnit?: boolean
   indicationText?: boolean
   status?: boolean
   startedOn?: boolean
@@ -1769,6 +2204,13 @@ export type MedicationRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   instructionsTextAr?: boolean
   instructionsTextEn?: boolean
   prescriberText?: boolean
+  prescriberDoctorName?: boolean
+  prescriberDoctorPhone?: boolean
+  unitsPerPackage?: boolean
+  unitsPerDose?: boolean
+  dosesPerDay?: boolean
+  treatmentDurationValue?: boolean
+  treatmentDurationUnit?: boolean
   indicationText?: boolean
   status?: boolean
   startedOn?: boolean
@@ -1793,6 +2235,13 @@ export type MedicationRecordSelectScalar = {
   instructionsTextAr?: boolean
   instructionsTextEn?: boolean
   prescriberText?: boolean
+  prescriberDoctorName?: boolean
+  prescriberDoctorPhone?: boolean
+  unitsPerPackage?: boolean
+  unitsPerDose?: boolean
+  dosesPerDay?: boolean
+  treatmentDurationValue?: boolean
+  treatmentDurationUnit?: boolean
   indicationText?: boolean
   status?: boolean
   startedOn?: boolean
@@ -1804,7 +2253,7 @@ export type MedicationRecordSelectScalar = {
   createdByUserId?: boolean
 }
 
-export type MedicationRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pharmacyId" | "patientId" | "medicationNameText" | "medicationCode" | "dosageForm" | "strengthText" | "doseAmountText" | "instructionsTextAr" | "instructionsTextEn" | "prescriberText" | "indicationText" | "status" | "startedOn" | "discontinuedOn" | "discontinueReason" | "isChronic" | "createdAt" | "updatedAt" | "createdByUserId", ExtArgs["result"]["medicationRecord"]>
+export type MedicationRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pharmacyId" | "patientId" | "medicationNameText" | "medicationCode" | "dosageForm" | "strengthText" | "doseAmountText" | "instructionsTextAr" | "instructionsTextEn" | "prescriberText" | "prescriberDoctorName" | "prescriberDoctorPhone" | "unitsPerPackage" | "unitsPerDose" | "dosesPerDay" | "treatmentDurationValue" | "treatmentDurationUnit" | "indicationText" | "status" | "startedOn" | "discontinuedOn" | "discontinueReason" | "isChronic" | "createdAt" | "updatedAt" | "createdByUserId", ExtArgs["result"]["medicationRecord"]>
 export type MedicationRecordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   patient?: boolean | Prisma.PatientDefaultArgs<ExtArgs>
   schedules?: boolean | Prisma.MedicationRecord$schedulesArgs<ExtArgs>
@@ -1846,6 +2295,34 @@ export type $MedicationRecordPayload<ExtArgs extends runtime.Types.Extensions.In
     instructionsTextAr: string | null
     instructionsTextEn: string | null
     prescriberText: string | null
+    /**
+     * Prescribing doctor's full name.
+     */
+    prescriberDoctorName: string | null
+    /**
+     * Prescribing doctor's phone number.
+     */
+    prescriberDoctorPhone: string | null
+    /**
+     * Capsules or tablets per package (e.g. 30).
+     */
+    unitsPerPackage: number | null
+    /**
+     * Prescribed units per dose (e.g. 1.0 tablet).
+     */
+    unitsPerDose: runtime.Decimal | null
+    /**
+     * Doses per day frequency.
+     */
+    dosesPerDay: number | null
+    /**
+     * Treatment duration numeric value (e.g. 6).
+     */
+    treatmentDurationValue: number | null
+    /**
+     * Treatment duration unit: "DAYS" | "WEEKS" | "MONTHS".
+     */
+    treatmentDurationUnit: string | null
     indicationText: string | null
     status: $Enums.MedicationStatus
     startedOn: Date
@@ -2295,6 +2772,13 @@ export interface MedicationRecordFieldRefs {
   readonly instructionsTextAr: Prisma.FieldRef<"MedicationRecord", 'String'>
   readonly instructionsTextEn: Prisma.FieldRef<"MedicationRecord", 'String'>
   readonly prescriberText: Prisma.FieldRef<"MedicationRecord", 'String'>
+  readonly prescriberDoctorName: Prisma.FieldRef<"MedicationRecord", 'String'>
+  readonly prescriberDoctorPhone: Prisma.FieldRef<"MedicationRecord", 'String'>
+  readonly unitsPerPackage: Prisma.FieldRef<"MedicationRecord", 'Int'>
+  readonly unitsPerDose: Prisma.FieldRef<"MedicationRecord", 'Decimal'>
+  readonly dosesPerDay: Prisma.FieldRef<"MedicationRecord", 'Int'>
+  readonly treatmentDurationValue: Prisma.FieldRef<"MedicationRecord", 'Int'>
+  readonly treatmentDurationUnit: Prisma.FieldRef<"MedicationRecord", 'String'>
   readonly indicationText: Prisma.FieldRef<"MedicationRecord", 'String'>
   readonly status: Prisma.FieldRef<"MedicationRecord", 'MedicationStatus'>
   readonly startedOn: Prisma.FieldRef<"MedicationRecord", 'DateTime'>

@@ -20,8 +20,20 @@ export type PharmacyModel = runtime.Types.Result.DefaultSelection<Prisma.$Pharma
 
 export type AggregatePharmacy = {
   _count: PharmacyCountAggregateOutputType | null
+  _avg: PharmacyAvgAggregateOutputType | null
+  _sum: PharmacySumAggregateOutputType | null
   _min: PharmacyMinAggregateOutputType | null
   _max: PharmacyMaxAggregateOutputType | null
+}
+
+export type PharmacyAvgAggregateOutputType = {
+  refillLeadDays: number | null
+  refillUrgentDays: number | null
+}
+
+export type PharmacySumAggregateOutputType = {
+  refillLeadDays: number | null
+  refillUrgentDays: number | null
 }
 
 export type PharmacyMinAggregateOutputType = {
@@ -31,6 +43,11 @@ export type PharmacyMinAggregateOutputType = {
   defaultLocale: $Enums.Locale | null
   quietHoursStart: string | null
   quietHoursEnd: string | null
+  is24Hours: boolean | null
+  operatingHoursStart: string | null
+  operatingHoursEnd: string | null
+  refillLeadDays: number | null
+  refillUrgentDays: number | null
   status: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -43,6 +60,11 @@ export type PharmacyMaxAggregateOutputType = {
   defaultLocale: $Enums.Locale | null
   quietHoursStart: string | null
   quietHoursEnd: string | null
+  is24Hours: boolean | null
+  operatingHoursStart: string | null
+  operatingHoursEnd: string | null
+  refillLeadDays: number | null
+  refillUrgentDays: number | null
   status: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -55,12 +77,27 @@ export type PharmacyCountAggregateOutputType = {
   defaultLocale: number
   quietHoursStart: number
   quietHoursEnd: number
+  is24Hours: number
+  operatingHoursStart: number
+  operatingHoursEnd: number
+  refillLeadDays: number
+  refillUrgentDays: number
   status: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type PharmacyAvgAggregateInputType = {
+  refillLeadDays?: true
+  refillUrgentDays?: true
+}
+
+export type PharmacySumAggregateInputType = {
+  refillLeadDays?: true
+  refillUrgentDays?: true
+}
 
 export type PharmacyMinAggregateInputType = {
   id?: true
@@ -69,6 +106,11 @@ export type PharmacyMinAggregateInputType = {
   defaultLocale?: true
   quietHoursStart?: true
   quietHoursEnd?: true
+  is24Hours?: true
+  operatingHoursStart?: true
+  operatingHoursEnd?: true
+  refillLeadDays?: true
+  refillUrgentDays?: true
   status?: true
   createdAt?: true
   updatedAt?: true
@@ -81,6 +123,11 @@ export type PharmacyMaxAggregateInputType = {
   defaultLocale?: true
   quietHoursStart?: true
   quietHoursEnd?: true
+  is24Hours?: true
+  operatingHoursStart?: true
+  operatingHoursEnd?: true
+  refillLeadDays?: true
+  refillUrgentDays?: true
   status?: true
   createdAt?: true
   updatedAt?: true
@@ -93,6 +140,11 @@ export type PharmacyCountAggregateInputType = {
   defaultLocale?: true
   quietHoursStart?: true
   quietHoursEnd?: true
+  is24Hours?: true
+  operatingHoursStart?: true
+  operatingHoursEnd?: true
+  refillLeadDays?: true
+  refillUrgentDays?: true
   status?: true
   createdAt?: true
   updatedAt?: true
@@ -137,6 +189,18 @@ export type PharmacyAggregateArgs<ExtArgs extends runtime.Types.Extensions.Inter
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: PharmacyAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: PharmacySumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: PharmacyMinAggregateInputType
@@ -167,6 +231,8 @@ export type PharmacyGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   _count?: PharmacyCountAggregateInputType | true
+  _avg?: PharmacyAvgAggregateInputType
+  _sum?: PharmacySumAggregateInputType
   _min?: PharmacyMinAggregateInputType
   _max?: PharmacyMaxAggregateInputType
 }
@@ -178,10 +244,17 @@ export type PharmacyGroupByOutputType = {
   defaultLocale: $Enums.Locale
   quietHoursStart: string
   quietHoursEnd: string
+  is24Hours: boolean
+  operatingHoursStart: string
+  operatingHoursEnd: string
+  refillLeadDays: number
+  refillUrgentDays: number
   status: string
   createdAt: Date
   updatedAt: Date
   _count: PharmacyCountAggregateOutputType | null
+  _avg: PharmacyAvgAggregateOutputType | null
+  _sum: PharmacySumAggregateOutputType | null
   _min: PharmacyMinAggregateOutputType | null
   _max: PharmacyMaxAggregateOutputType | null
 }
@@ -211,6 +284,11 @@ export type PharmacyWhereInput = {
   defaultLocale?: Prisma.EnumLocaleFilter<"Pharmacy"> | $Enums.Locale
   quietHoursStart?: Prisma.StringFilter<"Pharmacy"> | string
   quietHoursEnd?: Prisma.StringFilter<"Pharmacy"> | string
+  is24Hours?: Prisma.BoolFilter<"Pharmacy"> | boolean
+  operatingHoursStart?: Prisma.StringFilter<"Pharmacy"> | string
+  operatingHoursEnd?: Prisma.StringFilter<"Pharmacy"> | string
+  refillLeadDays?: Prisma.IntFilter<"Pharmacy"> | number
+  refillUrgentDays?: Prisma.IntFilter<"Pharmacy"> | number
   status?: Prisma.StringFilter<"Pharmacy"> | string
   createdAt?: Prisma.DateTimeFilter<"Pharmacy"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Pharmacy"> | Date | string
@@ -227,6 +305,11 @@ export type PharmacyOrderByWithRelationInput = {
   defaultLocale?: Prisma.SortOrder
   quietHoursStart?: Prisma.SortOrder
   quietHoursEnd?: Prisma.SortOrder
+  is24Hours?: Prisma.SortOrder
+  operatingHoursStart?: Prisma.SortOrder
+  operatingHoursEnd?: Prisma.SortOrder
+  refillLeadDays?: Prisma.SortOrder
+  refillUrgentDays?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -246,6 +329,11 @@ export type PharmacyWhereUniqueInput = Prisma.AtLeast<{
   defaultLocale?: Prisma.EnumLocaleFilter<"Pharmacy"> | $Enums.Locale
   quietHoursStart?: Prisma.StringFilter<"Pharmacy"> | string
   quietHoursEnd?: Prisma.StringFilter<"Pharmacy"> | string
+  is24Hours?: Prisma.BoolFilter<"Pharmacy"> | boolean
+  operatingHoursStart?: Prisma.StringFilter<"Pharmacy"> | string
+  operatingHoursEnd?: Prisma.StringFilter<"Pharmacy"> | string
+  refillLeadDays?: Prisma.IntFilter<"Pharmacy"> | number
+  refillUrgentDays?: Prisma.IntFilter<"Pharmacy"> | number
   status?: Prisma.StringFilter<"Pharmacy"> | string
   createdAt?: Prisma.DateTimeFilter<"Pharmacy"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Pharmacy"> | Date | string
@@ -262,12 +350,19 @@ export type PharmacyOrderByWithAggregationInput = {
   defaultLocale?: Prisma.SortOrder
   quietHoursStart?: Prisma.SortOrder
   quietHoursEnd?: Prisma.SortOrder
+  is24Hours?: Prisma.SortOrder
+  operatingHoursStart?: Prisma.SortOrder
+  operatingHoursEnd?: Prisma.SortOrder
+  refillLeadDays?: Prisma.SortOrder
+  refillUrgentDays?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.PharmacyCountOrderByAggregateInput
+  _avg?: Prisma.PharmacyAvgOrderByAggregateInput
   _max?: Prisma.PharmacyMaxOrderByAggregateInput
   _min?: Prisma.PharmacyMinOrderByAggregateInput
+  _sum?: Prisma.PharmacySumOrderByAggregateInput
 }
 
 export type PharmacyScalarWhereWithAggregatesInput = {
@@ -280,6 +375,11 @@ export type PharmacyScalarWhereWithAggregatesInput = {
   defaultLocale?: Prisma.EnumLocaleWithAggregatesFilter<"Pharmacy"> | $Enums.Locale
   quietHoursStart?: Prisma.StringWithAggregatesFilter<"Pharmacy"> | string
   quietHoursEnd?: Prisma.StringWithAggregatesFilter<"Pharmacy"> | string
+  is24Hours?: Prisma.BoolWithAggregatesFilter<"Pharmacy"> | boolean
+  operatingHoursStart?: Prisma.StringWithAggregatesFilter<"Pharmacy"> | string
+  operatingHoursEnd?: Prisma.StringWithAggregatesFilter<"Pharmacy"> | string
+  refillLeadDays?: Prisma.IntWithAggregatesFilter<"Pharmacy"> | number
+  refillUrgentDays?: Prisma.IntWithAggregatesFilter<"Pharmacy"> | number
   status?: Prisma.StringWithAggregatesFilter<"Pharmacy"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Pharmacy"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Pharmacy"> | Date | string
@@ -292,6 +392,11 @@ export type PharmacyCreateInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -308,6 +413,11 @@ export type PharmacyUncheckedCreateInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -324,6 +434,11 @@ export type PharmacyUpdateInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -340,6 +455,11 @@ export type PharmacyUncheckedUpdateInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -356,6 +476,11 @@ export type PharmacyCreateManyInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -368,6 +493,11 @@ export type PharmacyUpdateManyMutationInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -380,6 +510,11 @@ export type PharmacyUncheckedUpdateManyInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -392,9 +527,19 @@ export type PharmacyCountOrderByAggregateInput = {
   defaultLocale?: Prisma.SortOrder
   quietHoursStart?: Prisma.SortOrder
   quietHoursEnd?: Prisma.SortOrder
+  is24Hours?: Prisma.SortOrder
+  operatingHoursStart?: Prisma.SortOrder
+  operatingHoursEnd?: Prisma.SortOrder
+  refillLeadDays?: Prisma.SortOrder
+  refillUrgentDays?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type PharmacyAvgOrderByAggregateInput = {
+  refillLeadDays?: Prisma.SortOrder
+  refillUrgentDays?: Prisma.SortOrder
 }
 
 export type PharmacyMaxOrderByAggregateInput = {
@@ -404,6 +549,11 @@ export type PharmacyMaxOrderByAggregateInput = {
   defaultLocale?: Prisma.SortOrder
   quietHoursStart?: Prisma.SortOrder
   quietHoursEnd?: Prisma.SortOrder
+  is24Hours?: Prisma.SortOrder
+  operatingHoursStart?: Prisma.SortOrder
+  operatingHoursEnd?: Prisma.SortOrder
+  refillLeadDays?: Prisma.SortOrder
+  refillUrgentDays?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -416,9 +566,19 @@ export type PharmacyMinOrderByAggregateInput = {
   defaultLocale?: Prisma.SortOrder
   quietHoursStart?: Prisma.SortOrder
   quietHoursEnd?: Prisma.SortOrder
+  is24Hours?: Prisma.SortOrder
+  operatingHoursStart?: Prisma.SortOrder
+  operatingHoursEnd?: Prisma.SortOrder
+  refillLeadDays?: Prisma.SortOrder
+  refillUrgentDays?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type PharmacySumOrderByAggregateInput = {
+  refillLeadDays?: Prisma.SortOrder
+  refillUrgentDays?: Prisma.SortOrder
 }
 
 export type PharmacyScalarRelationFilter = {
@@ -437,6 +597,18 @@ export type StringFieldUpdateOperationsInput = {
 
 export type EnumLocaleFieldUpdateOperationsInput = {
   set?: $Enums.Locale
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -508,6 +680,11 @@ export type PharmacyCreateWithoutMembershipsInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -523,6 +700,11 @@ export type PharmacyUncheckedCreateWithoutMembershipsInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -554,6 +736,11 @@ export type PharmacyUpdateWithoutMembershipsInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -569,6 +756,11 @@ export type PharmacyUncheckedUpdateWithoutMembershipsInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -584,6 +776,11 @@ export type PharmacyCreateWithoutChannelsInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -599,6 +796,11 @@ export type PharmacyUncheckedCreateWithoutChannelsInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -630,6 +832,11 @@ export type PharmacyUpdateWithoutChannelsInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -645,6 +852,11 @@ export type PharmacyUncheckedUpdateWithoutChannelsInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -660,6 +872,11 @@ export type PharmacyCreateWithoutPatientsInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -675,6 +892,11 @@ export type PharmacyUncheckedCreateWithoutPatientsInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -706,6 +928,11 @@ export type PharmacyUpdateWithoutPatientsInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -721,6 +948,11 @@ export type PharmacyUncheckedUpdateWithoutPatientsInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -736,6 +968,11 @@ export type PharmacyCreateWithoutRulesInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -751,6 +988,11 @@ export type PharmacyUncheckedCreateWithoutRulesInput = {
   defaultLocale?: $Enums.Locale
   quietHoursStart?: string
   quietHoursEnd?: string
+  is24Hours?: boolean
+  operatingHoursStart?: string
+  operatingHoursEnd?: string
+  refillLeadDays?: number
+  refillUrgentDays?: number
   status?: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -782,6 +1024,11 @@ export type PharmacyUpdateWithoutRulesInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -797,6 +1044,11 @@ export type PharmacyUncheckedUpdateWithoutRulesInput = {
   defaultLocale?: Prisma.EnumLocaleFieldUpdateOperationsInput | $Enums.Locale
   quietHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
   quietHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  is24Hours?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  operatingHoursStart?: Prisma.StringFieldUpdateOperationsInput | string
+  operatingHoursEnd?: Prisma.StringFieldUpdateOperationsInput | string
+  refillLeadDays?: Prisma.IntFieldUpdateOperationsInput | number
+  refillUrgentDays?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -870,6 +1122,11 @@ export type PharmacySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   defaultLocale?: boolean
   quietHoursStart?: boolean
   quietHoursEnd?: boolean
+  is24Hours?: boolean
+  operatingHoursStart?: boolean
+  operatingHoursEnd?: boolean
+  refillLeadDays?: boolean
+  refillUrgentDays?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -887,6 +1144,11 @@ export type PharmacySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   defaultLocale?: boolean
   quietHoursStart?: boolean
   quietHoursEnd?: boolean
+  is24Hours?: boolean
+  operatingHoursStart?: boolean
+  operatingHoursEnd?: boolean
+  refillLeadDays?: boolean
+  refillUrgentDays?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -899,6 +1161,11 @@ export type PharmacySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   defaultLocale?: boolean
   quietHoursStart?: boolean
   quietHoursEnd?: boolean
+  is24Hours?: boolean
+  operatingHoursStart?: boolean
+  operatingHoursEnd?: boolean
+  refillLeadDays?: boolean
+  refillUrgentDays?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -911,12 +1178,17 @@ export type PharmacySelectScalar = {
   defaultLocale?: boolean
   quietHoursStart?: boolean
   quietHoursEnd?: boolean
+  is24Hours?: boolean
+  operatingHoursStart?: boolean
+  operatingHoursEnd?: boolean
+  refillLeadDays?: boolean
+  refillUrgentDays?: boolean
   status?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type PharmacyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "timeZone" | "defaultLocale" | "quietHoursStart" | "quietHoursEnd" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["pharmacy"]>
+export type PharmacyOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "timeZone" | "defaultLocale" | "quietHoursStart" | "quietHoursEnd" | "is24Hours" | "operatingHoursStart" | "operatingHoursEnd" | "refillLeadDays" | "refillUrgentDays" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["pharmacy"]>
 export type PharmacyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   memberships?: boolean | Prisma.Pharmacy$membershipsArgs<ExtArgs>
   channels?: boolean | Prisma.Pharmacy$channelsArgs<ExtArgs>
@@ -948,6 +1220,20 @@ export type $PharmacyPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
      */
     quietHoursStart: string
     quietHoursEnd: string
+    /**
+     * 24-hour operation toggle. If true, operating hours restrictions do not apply.
+     */
+    is24Hours: boolean
+    operatingHoursStart: string
+    operatingHoursEnd: string
+    /**
+     * Days before depletion to send the standard pharmacy refill alert
+     */
+    refillLeadDays: number
+    /**
+     * Days before depletion to send the urgent pharmacy refill alert
+     */
+    refillUrgentDays: number
     status: string
     createdAt: Date
     updatedAt: Date
@@ -1384,6 +1670,11 @@ export interface PharmacyFieldRefs {
   readonly defaultLocale: Prisma.FieldRef<"Pharmacy", 'Locale'>
   readonly quietHoursStart: Prisma.FieldRef<"Pharmacy", 'String'>
   readonly quietHoursEnd: Prisma.FieldRef<"Pharmacy", 'String'>
+  readonly is24Hours: Prisma.FieldRef<"Pharmacy", 'Boolean'>
+  readonly operatingHoursStart: Prisma.FieldRef<"Pharmacy", 'String'>
+  readonly operatingHoursEnd: Prisma.FieldRef<"Pharmacy", 'String'>
+  readonly refillLeadDays: Prisma.FieldRef<"Pharmacy", 'Int'>
+  readonly refillUrgentDays: Prisma.FieldRef<"Pharmacy", 'Int'>
   readonly status: Prisma.FieldRef<"Pharmacy", 'String'>
   readonly createdAt: Prisma.FieldRef<"Pharmacy", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Pharmacy", 'DateTime'>

@@ -46,6 +46,11 @@ export type PharmacyProfile = {
   defaultLocale: Locale;
   quietHoursStart: string;
   quietHoursEnd: string;
+  is24Hours: boolean;
+  operatingHoursStart: string;
+  operatingHoursEnd: string;
+  refillLeadDays: number;
+  refillUrgentDays: number;
 };
 
 /**
@@ -53,10 +58,8 @@ export type PharmacyProfile = {
  *
  * There is no separate `Setting` model in this codebase — `Pharmacy` IS the
  * settings table, and the columns it carries (name, timeZone, defaultLocale,
- * quietHours*) are the whole of the pharmacy-scoped configuration. Anything the
- * PRD wants that has no column here (a contact phone, an address) has no home
- * yet; `listPharmacyChannels` below is the closest thing that exists, and it is
- * read-only because a channel's number is a webhook routing key, not a label.
+ * quietHours*, is24Hours, operatingHours*, refill*Days) are the whole of the
+ * pharmacy-scoped configuration.
  */
 export async function getPharmacyProfile(
   pharmacyId: string,
@@ -70,6 +73,11 @@ export async function getPharmacyProfile(
       defaultLocale: true,
       quietHoursStart: true,
       quietHoursEnd: true,
+      is24Hours: true,
+      operatingHoursStart: true,
+      operatingHoursEnd: true,
+      refillLeadDays: true,
+      refillUrgentDays: true,
     },
   });
 }
@@ -848,8 +856,13 @@ const profileSchema = z.object({
   name: z.string().trim().min(2).max(120),
   timeZone: z.string().trim().min(1).max(64).refine(isValidTimeZone),
   defaultLocale: z.enum(Locale),
-  quietHoursStart: z.string().regex(HHMM),
-  quietHoursEnd: z.string().regex(HHMM),
+  quietHoursStart: z.string().regex(HHMM).default("21:00"),
+  quietHoursEnd: z.string().regex(HHMM).default("07:00"),
+  is24Hours: z.coerce.boolean().default(false),
+  operatingHoursStart: z.string().regex(HHMM).default("08:00"),
+  operatingHoursEnd: z.string().regex(HHMM).default("22:00"),
+  refillLeadDays: z.coerce.number().int().min(1).max(30).default(5),
+  refillUrgentDays: z.coerce.number().int().min(1).max(14).default(1),
   reason: z.string().trim().max(200).optional(),
 });
 
@@ -860,6 +873,10 @@ const PROFILE_FIELD_CODE: Record<string, AdminRefusalCode> = {
   defaultLocale: "INVALID_INPUT",
   quietHoursStart: "INVALID_INPUT",
   quietHoursEnd: "INVALID_INPUT",
+  operatingHoursStart: "INVALID_INPUT",
+  operatingHoursEnd: "INVALID_INPUT",
+  refillLeadDays: "INVALID_INPUT",
+  refillUrgentDays: "INVALID_INPUT",
 };
 
 export async function applyPharmacyProfile(
@@ -868,8 +885,13 @@ export async function applyPharmacyProfile(
     name: unknown;
     timeZone: unknown;
     defaultLocale: unknown;
-    quietHoursStart: unknown;
-    quietHoursEnd: unknown;
+    quietHoursStart?: unknown;
+    quietHoursEnd?: unknown;
+    is24Hours?: unknown;
+    operatingHoursStart?: unknown;
+    operatingHoursEnd?: unknown;
+    refillLeadDays?: unknown;
+    refillUrgentDays?: unknown;
     reason?: unknown;
   },
 ): Promise<AdminMutationResult> {
@@ -892,6 +914,11 @@ export async function applyPharmacyProfile(
       defaultLocale: true,
       quietHoursStart: true,
       quietHoursEnd: true,
+      is24Hours: true,
+      operatingHoursStart: true,
+      operatingHoursEnd: true,
+      refillLeadDays: true,
+      refillUrgentDays: true,
     },
   });
 
@@ -906,6 +933,11 @@ export async function applyPharmacyProfile(
         defaultLocale: next.defaultLocale,
         quietHoursStart: next.quietHoursStart,
         quietHoursEnd: next.quietHoursEnd,
+        is24Hours: next.is24Hours,
+        operatingHoursStart: next.operatingHoursStart,
+        operatingHoursEnd: next.operatingHoursEnd,
+        refillLeadDays: next.refillLeadDays,
+        refillUrgentDays: next.refillUrgentDays,
       },
     });
 
@@ -923,6 +955,11 @@ export async function applyPharmacyProfile(
         defaultLocale: next.defaultLocale,
         quietHoursStart: next.quietHoursStart,
         quietHoursEnd: next.quietHoursEnd,
+        is24Hours: next.is24Hours,
+        operatingHoursStart: next.operatingHoursStart,
+        operatingHoursEnd: next.operatingHoursEnd,
+        refillLeadDays: next.refillLeadDays,
+        refillUrgentDays: next.refillUrgentDays,
       },
       reason: next.reason,
     });

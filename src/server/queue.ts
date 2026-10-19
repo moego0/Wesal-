@@ -101,6 +101,7 @@ export const SWEEP_INTERVALS_MS = {
   settleNoResponse: 300_000,
   materialize: 900_000,
   rulesSweep: 900_000,
+  refillSweep: 300_000,
   heartbeat: 60_000,
 } as const;
 

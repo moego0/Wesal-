@@ -293,6 +293,9 @@ export async function getPatientDetail(pharmacyId: string, patientId: string) {
               lateWindowMinutes: true,
             },
           },
+          refills: {
+            orderBy: { cycleNumber: "asc" },
+          },
         },
       },
       cases: {

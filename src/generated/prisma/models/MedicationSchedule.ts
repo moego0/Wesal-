@@ -984,22 +984,6 @@ export type MedicationScheduleUpdatedaysOfWeekInput = {
   push?: number | number[]
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type MedicationScheduleCreateNestedOneWithoutRevisionsInput = {
   create?: Prisma.XOR<Prisma.MedicationScheduleCreateWithoutRevisionsInput, Prisma.MedicationScheduleUncheckedCreateWithoutRevisionsInput>
   connectOrCreate?: Prisma.MedicationScheduleCreateOrConnectWithoutRevisionsInput

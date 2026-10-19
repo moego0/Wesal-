@@ -35,6 +35,7 @@ import {
   getPatientDetail,
   getRecentDoses,
 } from "@/server/queries/patients";
+import { PatientMedicationRefills } from "@/components/refills/PatientMedicationRefills";
 
 /**
  * One patient's record: who they are, what they are taking, what they answered,
@@ -345,6 +346,17 @@ async function PatientRecord({
                     </div>
                   ))}
                 </div>
+
+                <PatientMedicationRefills
+                  medication={medication as any}
+                  patient={{
+                    id: patient.id,
+                    fullName: patient.fullName,
+                    phoneE164: patient.phoneE164,
+                  }}
+                  canManage={canManageMedications}
+                  locale={locale}
+                />
               </div>
             ))
           )}

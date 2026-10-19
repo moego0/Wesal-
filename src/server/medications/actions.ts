@@ -20,6 +20,14 @@ import {
   materializeSchedule,
   reconcileScheduleChange,
 } from "@/server/scheduling/materialize";
+import {
+  calculateDailyConsumption,
+  calculateDaysSupply,
+  calculateDepletionDate,
+  calculateTotalPackages,
+  calculateTreatmentDays,
+  calculateTreatmentEndDate,
+} from "@/lib/refills";
 
 /**
  * Adding a medication and its schedule, and changing either.
@@ -120,6 +128,13 @@ const ECHOED = [
   "lateWindowMinutes",
   "status",
   "reason",
+  "unitsPerPackage",
+  "unitsPerDose",
+  "dosesPerDay",
+  "treatmentDurationValue",
+  "treatmentDurationUnit",
+  "prescriberDoctorName",
+  "prescriberDoctorPhone",
 ] as const;
 
 function echo(formData: FormData): Record<string, string> {
@@ -282,22 +297,20 @@ function isIanaTimeZone(value: string): boolean {
 
 type MedicationInput = {
   medicationNameText: string;
-  /**
-   * The RxCUI the name picker resolved, or null.
-   *
-   * Shape-checked but never trusted to match `medicationNameText`: the client
-   * clears it when the name is edited, and that is the real defence. A
-   * hand-built POST can pair any valid code with any name, which is why nothing
-   * authorises on this value and no query filters by it.
-   */
   medicationCode: string | null;
   strengthText: string | null;
   doseAmountText: string | null;
-  /** Instructions text, already in the language the pharmacist is reading. */
   instructions: string | null;
   prescriberText: string | null;
   indicationText: string | null;
   startedOn: Date;
+  unitsPerPackage: number | null;
+  unitsPerDose: number | null;
+  dosesPerDay: number | null;
+  treatmentDurationValue: number | null;
+  treatmentDurationUnit: "DAYS" | "WEEKS" | "MONTHS" | null;
+  prescriberDoctorName: string | null;
+  prescriberDoctorPhone: string | null;
 };
 
 function parseMedicationFields(
@@ -313,6 +326,14 @@ function parseMedicationFields(
   const indicationText = nullable(field(formData, "indication"));
   const startedOnRaw = field(formData, "startedOn");
 
+  const unitsPerPackageRaw = field(formData, "unitsPerPackage");
+  const unitsPerDoseRaw = field(formData, "unitsPerDose");
+  const dosesPerDayRaw = field(formData, "dosesPerDay");
+  const durationValRaw = field(formData, "treatmentDurationValue");
+  const durationUnitRaw = field(formData, "treatmentDurationUnit");
+  const prescriberDoctorName = nullable(field(formData, "prescriberDoctorName"));
+  const prescriberDoctorPhone = nullable(field(formData, "prescriberDoctorPhone"));
+
   if (medicationNameText.length < 2 || medicationNameText.length > NAME_MAX) {
     fieldErrors.name = medicationNameText === "" ? "REQUIRED" : "INVALID";
   }
@@ -324,12 +345,59 @@ function parseMedicationFields(
   if (prescriberText && prescriberText.length > PRESCRIBER_MAX) {
     fieldErrors.prescriber = "TOO_LONG";
   }
+  if (prescriberDoctorName && prescriberDoctorName.length > PRESCRIBER_MAX) {
+    fieldErrors.prescriberDoctorName = "TOO_LONG";
+  }
+  if (prescriberDoctorPhone && prescriberDoctorPhone.length > 40) {
+    fieldErrors.prescriberDoctorPhone = "TOO_LONG";
+  }
   if (indicationText && indicationText.length > INDICATION_MAX) {
     fieldErrors.indication = "TOO_LONG";
   }
 
   const startedOn = parseDateOnly(startedOnRaw);
   if (!startedOn) fieldErrors.startedOn = startedOnRaw === "" ? "REQUIRED" : "INVALID_DATE";
+
+  let unitsPerPackage: number | null = null;
+  if (unitsPerPackageRaw !== "") {
+    const parsed = Number(unitsPerPackageRaw);
+    if (Number.isInteger(parsed) && parsed > 0) unitsPerPackage = parsed;
+    else fieldErrors.unitsPerPackage = "INVALID_NUMBER";
+  }
+
+  let unitsPerDose: number | null = null;
+  if (unitsPerDoseRaw !== "") {
+    const parsed = Number(unitsPerDoseRaw);
+    if (!Number.isNaN(parsed) && parsed > 0) unitsPerDose = parsed;
+    else fieldErrors.unitsPerDose = "INVALID_NUMBER";
+  }
+
+  let dosesPerDay: number | null = null;
+  if (dosesPerDayRaw !== "") {
+    const parsed = Number(dosesPerDayRaw);
+    if (Number.isInteger(parsed) && parsed > 0) dosesPerDay = parsed;
+    else fieldErrors.dosesPerDay = "INVALID_NUMBER";
+  }
+
+  let treatmentDurationValue: number | null = null;
+  if (durationValRaw !== "") {
+    const parsed = Number(durationValRaw);
+    if (Number.isInteger(parsed) && parsed > 0) treatmentDurationValue = parsed;
+    else fieldErrors.treatmentDurationValue = "INVALID_NUMBER";
+  }
+
+  let treatmentDurationUnit: "DAYS" | "WEEKS" | "MONTHS" | null = null;
+  if (durationUnitRaw !== "") {
+    if (["DAYS", "WEEKS", "MONTHS"].includes(durationUnitRaw)) {
+      treatmentDurationUnit = durationUnitRaw as "DAYS" | "WEEKS" | "MONTHS";
+    } else {
+      fieldErrors.treatmentDurationUnit = "INVALID_UNIT";
+    }
+  }
+
+  if (treatmentDurationValue && !treatmentDurationUnit) {
+    fieldErrors.treatmentDurationUnit = "REQUIRED";
+  }
 
   return {
     medicationNameText,
@@ -339,8 +407,14 @@ function parseMedicationFields(
     instructions,
     prescriberText,
     indicationText,
-    // Never read on the failure path — the caller returns before using it.
     startedOn: startedOn ?? new Date(),
+    unitsPerPackage,
+    unitsPerDose,
+    dosesPerDay,
+    treatmentDurationValue,
+    treatmentDurationUnit,
+    prescriberDoctorName,
+    prescriberDoctorPhone,
   };
 }
 
@@ -363,6 +437,7 @@ function parseScheduleFields(
   formData: FormData,
   patientTimeZone: string,
   fieldErrors: Record<string, string>,
+  medicationInput?: Partial<MedicationInput>,
 ): ScheduleInput {
   const modeRaw = field(formData, "mode");
   if (modeRaw !== "" && !(SCHEDULE_MODES as readonly string[]).includes(modeRaw)) {
@@ -393,7 +468,19 @@ function parseScheduleFields(
   if (endDateRaw !== "") {
     endDate = parseDateOnly(endDateRaw);
     if (!endDate) fieldErrors.endDate = "INVALID_DATE";
+  } else if (
+    startDate &&
+    medicationInput?.treatmentDurationValue &&
+    medicationInput?.treatmentDurationUnit
+  ) {
+    // Automatically calculate end date from duration when not explicitly overridden
+    endDate = calculateTreatmentEndDate(
+      startDate,
+      medicationInput.treatmentDurationValue,
+      medicationInput.treatmentDurationUnit,
+    );
   }
+
   if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
     fieldErrors.endDate = "END_BEFORE_START";
   }
@@ -402,9 +489,6 @@ function parseScheduleFields(
   let lateWindowMinutes: number | null = null;
   if (lateWindowRaw !== "") {
     const parsed = Number(lateWindowRaw);
-    // 0 is not an override: `computeLateWindowMinutes` treats a non-positive
-    // override as "use the clamp", so accepting it would look like a setting
-    // that silently does nothing.
     if (!Number.isInteger(parsed) || parsed < 1 || parsed > 1440) {
       fieldErrors.lateWindowMinutes = "INVALID";
     } else {
@@ -415,8 +499,6 @@ function parseScheduleFields(
   const reason = nullable(field(formData, "reason"));
   if (reason && reason.length > REASON_MAX) fieldErrors.reason = "TOO_LONG";
 
-  // A PRN (as needed) medication has no dose times and no reminders: the
-  // materializer returns immediately for it, so nothing is ever sent.
   let timesOfDay: string[] = [];
   if (mode === "FIXED_TIMES_OF_DAY") {
     const normalized: string[] = [];
@@ -439,14 +521,6 @@ function parseScheduleFields(
     }
   }
 
-  /*
-   * At least one day, always stated explicitly.
-   *
-   * The schema reads an empty `daysOfWeek` as "every day", which is a fine
-   * storage convention and a terrible form behaviour: a pharmacist who unticks
-   * every box to mean "no days" would get reminders seven days a week, and the
-   * form would have told them nothing.
-   */
   const daysOfWeek = checkedDays(formData);
   if (daysOfWeek.length === 0) fieldErrors.daysOfWeek = "DAYS_REQUIRED";
 
@@ -457,7 +531,6 @@ function parseScheduleFields(
     timesOfDay,
     daysOfWeek,
     timeZone,
-    // Never read on the failure path.
     startDate: startDate ?? new Date(),
     endDate,
     lateWindowMinutes,
@@ -747,7 +820,7 @@ export async function createMedicationWithSchedule(
   }
 
   const medication = parseMedicationFields(formData, fieldErrors);
-  const schedule = parseScheduleFields(formData, patient.timeZone, fieldErrors);
+  const schedule = parseScheduleFields(formData, patient.timeZone, fieldErrors, medication);
 
   if (Object.keys(fieldErrors).length > 0) {
     return { formError: null, fieldErrors, values, times, days };
@@ -778,6 +851,13 @@ export async function createMedicationWithSchedule(
         indicationText: medication.indicationText,
         startedOn: medication.startedOn,
         createdByUserId: user.userId,
+        unitsPerPackage: medication.unitsPerPackage,
+        unitsPerDose: medication.unitsPerDose,
+        dosesPerDay: medication.dosesPerDay,
+        treatmentDurationValue: medication.treatmentDurationValue,
+        treatmentDurationUnit: medication.treatmentDurationUnit,
+        prescriberDoctorName: medication.prescriberDoctorName,
+        prescriberDoctorPhone: medication.prescriberDoctorPhone,
         ...instructions,
       },
     });
@@ -807,6 +887,48 @@ export async function createMedicationWithSchedule(
       { patientId: patient.id, medicationId: record.id },
       { ...schedule, medicationStatus: "ACTIVE", status: "ACTIVE" },
     );
+
+    // Initial Refill Record (cycle 1)
+    if (medication.unitsPerPackage) {
+      let daysSupply = 30;
+      if (medication.unitsPerDose && (medication.dosesPerDay || schedule.timesOfDay.length)) {
+        const daily = calculateDailyConsumption(
+          medication.unitsPerDose,
+          medication.dosesPerDay ?? schedule.timesOfDay.length ?? 1,
+        );
+        daysSupply = calculateDaysSupply(medication.unitsPerPackage, daily);
+      } else {
+        daysSupply = calculateDaysSupply(medication.unitsPerPackage, 1);
+      }
+      const depletionDate = calculateDepletionDate(medication.startedOn, daysSupply);
+
+      let packagesNeeded = 1;
+      if (medication.treatmentDurationValue && medication.treatmentDurationUnit) {
+        const treatmentEnd = calculateTreatmentEndDate(
+          medication.startedOn,
+          medication.treatmentDurationValue,
+          medication.treatmentDurationUnit as "DAYS" | "WEEKS" | "MONTHS",
+        );
+        const treatmentDays = calculateTreatmentDays(medication.startedOn, treatmentEnd);
+        packagesNeeded = calculateTotalPackages(treatmentDays, daysSupply);
+      }
+
+      await tx.refillRecord.create({
+        data: {
+          pharmacyId: user.pharmacyId,
+          patientId: patient.id,
+          medicationId: record.id,
+          status: "PENDING",
+          cycleNumber: 1,
+          packagesNeeded,
+          daysSupply,
+          expectedRunOutOn: depletionDate,
+          refillDueOn: depletionDate,
+          unitsDispensed: medication.unitsPerPackage,
+          lastDispensedOn: medication.startedOn,
+        },
+      });
+    }
   });
 
   return redirect({ href: `/patients/${patient.id}`, locale });
@@ -846,7 +968,7 @@ export async function updateMedicationWithSchedule(
 
   const fieldErrors: Record<string, string> = {};
   const input = parseMedicationFields(formData, fieldErrors);
-  const spec = parseScheduleFields(formData, medication.patient.timeZone, fieldErrors);
+  const spec = parseScheduleFields(formData, medication.patient.timeZone, fieldErrors, input);
 
   if (Object.keys(fieldErrors).length > 0) {
     return { formError: null, fieldErrors, values, times, days };
@@ -887,6 +1009,13 @@ export async function updateMedicationWithSchedule(
         indicationText: input.indicationText,
         startedOn: input.startedOn,
         status: spec.medicationStatus,
+        unitsPerPackage: input.unitsPerPackage,
+        unitsPerDose: input.unitsPerDose,
+        dosesPerDay: input.dosesPerDay,
+        treatmentDurationValue: input.treatmentDurationValue,
+        treatmentDurationUnit: input.treatmentDurationUnit,
+        prescriberDoctorName: input.prescriberDoctorName,
+        prescriberDoctorPhone: input.prescriberDoctorPhone,
         // Kept consistent in both directions: a discontinued row says when and
         // why, and a restarted one does not claim to be stopped.
         discontinuedOn:
@@ -935,6 +1064,69 @@ export async function updateMedicationWithSchedule(
       await applyScheduleChangeInTx(tx, ctx, target, spec);
     } else {
       await createScheduleInTx(tx, ctx, ids, spec);
+    }
+
+    // Update active Refill Record if units/duration changed
+    if (input.unitsPerPackage) {
+      let daysSupply = 30;
+      if (input.unitsPerDose && (input.dosesPerDay || spec.timesOfDay.length)) {
+        const daily = calculateDailyConsumption(
+          input.unitsPerDose,
+          input.dosesPerDay ?? spec.timesOfDay.length ?? 1,
+        );
+        daysSupply = calculateDaysSupply(input.unitsPerPackage, daily);
+      } else {
+        daysSupply = calculateDaysSupply(input.unitsPerPackage, 1);
+      }
+
+      let packagesNeeded = 1;
+      if (input.treatmentDurationValue && input.treatmentDurationUnit) {
+        const treatmentEnd = calculateTreatmentEndDate(
+          input.startedOn,
+          input.treatmentDurationValue,
+          input.treatmentDurationUnit as "DAYS" | "WEEKS" | "MONTHS",
+        );
+        const treatmentDays = calculateTreatmentDays(input.startedOn, treatmentEnd);
+        packagesNeeded = calculateTotalPackages(treatmentDays, daysSupply);
+      }
+
+      const latestRefill = await tx.refillRecord.findFirst({
+        where: { medicationId: medication.id },
+        orderBy: { cycleNumber: "desc" },
+      });
+
+      if (!latestRefill) {
+        const depletionDate = calculateDepletionDate(input.startedOn, daysSupply);
+        await tx.refillRecord.create({
+          data: {
+            pharmacyId: user.pharmacyId,
+            patientId: medication.patientId,
+            medicationId: medication.id,
+            status: "PENDING",
+            cycleNumber: 1,
+            packagesNeeded,
+            daysSupply,
+            expectedRunOutOn: depletionDate,
+            refillDueOn: depletionDate,
+            unitsDispensed: input.unitsPerPackage,
+            lastDispensedOn: input.startedOn,
+          },
+        });
+      } else if (latestRefill.status === "PENDING" || latestRefill.status === "ESTIMATED") {
+        const depletionDate = calculateDepletionDate(
+          latestRefill.lastDispensedOn ?? input.startedOn,
+          daysSupply,
+        );
+        await tx.refillRecord.update({
+          where: { id: latestRefill.id },
+          data: {
+            packagesNeeded,
+            daysSupply,
+            expectedRunOutOn: depletionDate,
+            refillDueOn: depletionDate,
+          },
+        });
+      }
     }
   });
 

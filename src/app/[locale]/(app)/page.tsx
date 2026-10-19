@@ -15,8 +15,9 @@ import {
   buttonClass,
 } from "@/components/ui";
 import { requireSessionUser } from "@/server/auth/current-user";
-import { getDashboardSummary } from "@/server/queries/dashboard";
+import { getDashboardSummary, getUpcomingRefills } from "@/server/queries/dashboard";
 import { listOpenCases } from "@/server/queries/patients";
+import { UpcomingRefillsCard } from "@/components/refills/UpcomingRefillsCard";
 
 /**
  * The dashboard.
@@ -59,9 +60,10 @@ async function DashboardContent() {
   // No pharmacy lookup: the session already resolved the membership, and
   // re-reading the row to get a name and a time zone the session context
   // carries would be a second query per dashboard load for nothing.
-  const [summary, attention] = await Promise.all([
+  const [summary, attention, upcomingRefills] = await Promise.all([
     getDashboardSummary(user.pharmacyId, user.pharmacyTimeZone),
     listOpenCases(user.pharmacyId, 5),
+    getUpcomingRefills(user.pharmacyId, user.pharmacyTimeZone, 7),
   ]);
 
   const { delivery } = summary;
@@ -168,6 +170,8 @@ async function DashboardContent() {
           )}
         </CardBody>
       </Card>
+
+      <UpcomingRefillsCard refills={upcomingRefills} locale={locale} />
 
       <Card>
         <CardHeader

@@ -84,6 +84,13 @@ async function EditMedication({
     indication: medication.indicationText ?? "",
     startedOn: medication.startedOn.toISOString().slice(0, 10),
     status: medication.status,
+    unitsPerPackage: medication.unitsPerPackage,
+    unitsPerDose: medication.unitsPerDose ? Number(medication.unitsPerDose) : null,
+    dosesPerDay: medication.dosesPerDay,
+    treatmentDurationValue: medication.treatmentDurationValue,
+    treatmentDurationUnit: medication.treatmentDurationUnit,
+    prescriberDoctorName: medication.prescriberDoctorName,
+    prescriberDoctorPhone: medication.prescriberDoctorPhone,
   };
 
   const scheduleRecord: ScheduleFormRecord | null = schedule

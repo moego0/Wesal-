@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { prisma } from "@/server/db";
-import type { DeliveryState, Severity } from "@/generated/prisma/enums";
+import type { DeliveryState, RefillStatus, Severity } from "@/generated/prisma/enums";
 
 /**
  * The dashboard's numbers.
@@ -150,3 +150,110 @@ export async function getDashboardSummary(
     delivery,
   };
 }
+
+export type UpcomingRefillItem = {
+  id: string;
+  cycleNumber: number;
+  status: RefillStatus;
+  expectedRunOutOn: Date;
+  refillDueOn: Date | null;
+  daysRemaining: number;
+  packagesNeeded: number;
+  inventoryAvailable: boolean | null;
+  isUnconfirmedOverdue: boolean;
+  notes: string | null;
+  patient: {
+    id: string;
+    fullName: string;
+    phoneE164: string;
+  };
+  medication: {
+    id: string;
+    name: string;
+    strength: string | null;
+    unitsPerPackage: number | null;
+    prescriberDoctorName: string | null;
+    prescriberDoctorPhone: string | null;
+  };
+};
+
+export async function getUpcomingRefills(
+  pharmacyId: string,
+  timeZone: string,
+  daysAhead = 7,
+): Promise<UpcomingRefillItem[]> {
+  const localToday = DateTime.now().setZone(timeZone);
+  const todayIso = (localToday.isValid ? localToday : DateTime.utc()).toISODate() ?? "1970-01-01";
+  const todayDate = new Date(`${todayIso}T00:00:00.000Z`);
+
+  const cutoff = (localToday.isValid ? localToday : DateTime.utc()).plus({ days: daysAhead });
+  const cutoffIso = cutoff.toISODate() ?? "2099-12-31";
+  const cutoffDate = new Date(`${cutoffIso}T23:59:59.999Z`);
+
+  const refills = await prisma.refillRecord.findMany({
+    where: {
+      pharmacyId,
+      status: { in: ["PENDING", "ESTIMATED", "REQUESTED", "SCHEDULED", "STOCK_ORDERED", "READY_FOR_COLLECTION"] },
+      expectedRunOutOn: { lte: cutoffDate },
+      medication: { status: "ACTIVE" },
+      patient: { status: "ACTIVE" },
+    },
+    orderBy: [{ expectedRunOutOn: "asc" }, { cycleNumber: "asc" }],
+    take: 20,
+    select: {
+      id: true,
+      cycleNumber: true,
+      status: true,
+      expectedRunOutOn: true,
+      refillDueOn: true,
+      packagesNeeded: true,
+      inventoryAvailable: true,
+      isUnconfirmedOverdue: true,
+      notes: true,
+      patient: {
+        select: {
+          id: true,
+          fullName: true,
+          phoneE164: true,
+        },
+      },
+      medication: {
+        select: {
+          id: true,
+          medicationNameText: true,
+          strengthText: true,
+          unitsPerPackage: true,
+          prescriberDoctorName: true,
+          prescriberDoctorPhone: true,
+        },
+      },
+    },
+  });
+
+  return refills.map((r) => {
+    const runOut = r.expectedRunOutOn ?? todayDate;
+    const diffDays = Math.round((runOut.getTime() - todayDate.getTime()) / 86_400_000);
+    return {
+      id: r.id,
+      cycleNumber: r.cycleNumber,
+      status: r.status,
+      expectedRunOutOn: runOut,
+      refillDueOn: r.refillDueOn,
+      daysRemaining: diffDays,
+      packagesNeeded: r.packagesNeeded,
+      inventoryAvailable: r.inventoryAvailable,
+      isUnconfirmedOverdue: r.isUnconfirmedOverdue || diffDays < 0,
+      notes: r.notes,
+      patient: r.patient,
+      medication: {
+        id: r.medication.id,
+        name: r.medication.medicationNameText,
+        strength: r.medication.strengthText,
+        unitsPerPackage: r.medication.unitsPerPackage,
+        prescriberDoctorName: r.medication.prescriberDoctorName,
+        prescriberDoctorPhone: r.medication.prescriberDoctorPhone,
+      },
+    };
+  });
+}
+

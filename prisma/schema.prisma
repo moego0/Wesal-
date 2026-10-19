@@ -209,6 +209,9 @@ enum RefillStatus {
   DUE
   REQUESTED
   SCHEDULED
+  PENDING
+  STOCK_ORDERED
+  READY_FOR_COLLECTION
   DISPENSED
   CANCELLED
 }
@@ -290,6 +293,14 @@ model Pharmacy {
   /// Local wall-clock "HH:mm". Suppresses outbound during these hours.
   quietHoursStart String   @default("21:00")
   quietHoursEnd   String   @default("07:00")
+  /// 24-hour operation toggle. If true, operating hours restrictions do not apply.
+  is24Hours            Boolean  @default(false)
+  operatingHoursStart  String   @default("08:00")
+  operatingHoursEnd    String   @default("22:00")
+  /// Days before depletion to send the standard pharmacy refill alert
+  refillLeadDays       Int      @default(5)
+  /// Days before depletion to send the urgent pharmacy refill alert
+  refillUrgentDays     Int      @default(1)
   status          String   @default("ACTIVE")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -459,6 +470,20 @@ model MedicationRecord {
   instructionsTextAr String?
   instructionsTextEn String?
   prescriberText     String?
+  /// Prescribing doctor's full name.
+  prescriberDoctorName   String?
+  /// Prescribing doctor's phone number.
+  prescriberDoctorPhone  String?
+  /// Capsules or tablets per package (e.g. 30).
+  unitsPerPackage        Int?
+  /// Prescribed units per dose (e.g. 1.0 tablet).
+  unitsPerDose           Decimal?         @db.Decimal(10, 2)
+  /// Doses per day frequency.
+  dosesPerDay            Int?
+  /// Treatment duration numeric value (e.g. 6).
+  treatmentDurationValue Int?
+  /// Treatment duration unit: "DAYS" | "WEEKS" | "MONTHS".
+  treatmentDurationUnit  String?
   indicationText     String?
   status             MedicationStatus @default(ACTIVE)
   startedOn          DateTime         @db.Date
@@ -843,10 +868,17 @@ model RefillRecord {
   refillDueOn      DateTime? @db.Date
   refillLeadDays   Int       @default(5)
 
-  requestedAtUtc DateTime?
-  remindedAtUtc  DateTime?
-  dispensedAtUtc DateTime?
-  notes          String?
+  requestedAtUtc            DateTime?
+  remindedAtUtc             DateTime?
+  dispensedAtUtc            DateTime?
+  cycleNumber               Int       @default(1)
+  packagesNeeded            Int       @default(1)
+  patientRemindedAtUtc      DateTime?
+  pharmacyWarnedAtUtc       DateTime?
+  pharmacyUrgentWarnedAtUtc DateTime?
+  isUnconfirmedOverdue      Boolean   @default(false)
+  inventoryAvailable        Boolean?
+  notes                     String?
 
   patient    Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
   medication MedicationRecord @relation(fields: [medicationId], references: [id], onDelete: Cascade)

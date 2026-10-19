@@ -30,12 +30,16 @@ export type RefillRecordAvgAggregateOutputType = {
   daysSupply: number | null
   unitsDispensed: runtime.Decimal | null
   refillLeadDays: number | null
+  cycleNumber: number | null
+  packagesNeeded: number | null
 }
 
 export type RefillRecordSumAggregateOutputType = {
   daysSupply: number | null
   unitsDispensed: runtime.Decimal | null
   refillLeadDays: number | null
+  cycleNumber: number | null
+  packagesNeeded: number | null
 }
 
 export type RefillRecordMinAggregateOutputType = {
@@ -53,6 +57,13 @@ export type RefillRecordMinAggregateOutputType = {
   requestedAtUtc: Date | null
   remindedAtUtc: Date | null
   dispensedAtUtc: Date | null
+  cycleNumber: number | null
+  packagesNeeded: number | null
+  patientRemindedAtUtc: Date | null
+  pharmacyWarnedAtUtc: Date | null
+  pharmacyUrgentWarnedAtUtc: Date | null
+  isUnconfirmedOverdue: boolean | null
+  inventoryAvailable: boolean | null
   notes: string | null
 }
 
@@ -71,6 +82,13 @@ export type RefillRecordMaxAggregateOutputType = {
   requestedAtUtc: Date | null
   remindedAtUtc: Date | null
   dispensedAtUtc: Date | null
+  cycleNumber: number | null
+  packagesNeeded: number | null
+  patientRemindedAtUtc: Date | null
+  pharmacyWarnedAtUtc: Date | null
+  pharmacyUrgentWarnedAtUtc: Date | null
+  isUnconfirmedOverdue: boolean | null
+  inventoryAvailable: boolean | null
   notes: string | null
 }
 
@@ -89,6 +107,13 @@ export type RefillRecordCountAggregateOutputType = {
   requestedAtUtc: number
   remindedAtUtc: number
   dispensedAtUtc: number
+  cycleNumber: number
+  packagesNeeded: number
+  patientRemindedAtUtc: number
+  pharmacyWarnedAtUtc: number
+  pharmacyUrgentWarnedAtUtc: number
+  isUnconfirmedOverdue: number
+  inventoryAvailable: number
   notes: number
   _all: number
 }
@@ -98,12 +123,16 @@ export type RefillRecordAvgAggregateInputType = {
   daysSupply?: true
   unitsDispensed?: true
   refillLeadDays?: true
+  cycleNumber?: true
+  packagesNeeded?: true
 }
 
 export type RefillRecordSumAggregateInputType = {
   daysSupply?: true
   unitsDispensed?: true
   refillLeadDays?: true
+  cycleNumber?: true
+  packagesNeeded?: true
 }
 
 export type RefillRecordMinAggregateInputType = {
@@ -121,6 +150,13 @@ export type RefillRecordMinAggregateInputType = {
   requestedAtUtc?: true
   remindedAtUtc?: true
   dispensedAtUtc?: true
+  cycleNumber?: true
+  packagesNeeded?: true
+  patientRemindedAtUtc?: true
+  pharmacyWarnedAtUtc?: true
+  pharmacyUrgentWarnedAtUtc?: true
+  isUnconfirmedOverdue?: true
+  inventoryAvailable?: true
   notes?: true
 }
 
@@ -139,6 +175,13 @@ export type RefillRecordMaxAggregateInputType = {
   requestedAtUtc?: true
   remindedAtUtc?: true
   dispensedAtUtc?: true
+  cycleNumber?: true
+  packagesNeeded?: true
+  patientRemindedAtUtc?: true
+  pharmacyWarnedAtUtc?: true
+  pharmacyUrgentWarnedAtUtc?: true
+  isUnconfirmedOverdue?: true
+  inventoryAvailable?: true
   notes?: true
 }
 
@@ -157,6 +200,13 @@ export type RefillRecordCountAggregateInputType = {
   requestedAtUtc?: true
   remindedAtUtc?: true
   dispensedAtUtc?: true
+  cycleNumber?: true
+  packagesNeeded?: true
+  patientRemindedAtUtc?: true
+  pharmacyWarnedAtUtc?: true
+  pharmacyUrgentWarnedAtUtc?: true
+  isUnconfirmedOverdue?: true
+  inventoryAvailable?: true
   notes?: true
   _all?: true
 }
@@ -262,6 +312,13 @@ export type RefillRecordGroupByOutputType = {
   requestedAtUtc: Date | null
   remindedAtUtc: Date | null
   dispensedAtUtc: Date | null
+  cycleNumber: number
+  packagesNeeded: number
+  patientRemindedAtUtc: Date | null
+  pharmacyWarnedAtUtc: Date | null
+  pharmacyUrgentWarnedAtUtc: Date | null
+  isUnconfirmedOverdue: boolean
+  inventoryAvailable: boolean | null
   notes: string | null
   _count: RefillRecordCountAggregateOutputType | null
   _avg: RefillRecordAvgAggregateOutputType | null
@@ -303,6 +360,13 @@ export type RefillRecordWhereInput = {
   requestedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
   remindedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
   dispensedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  cycleNumber?: Prisma.IntFilter<"RefillRecord"> | number
+  packagesNeeded?: Prisma.IntFilter<"RefillRecord"> | number
+  patientRemindedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFilter<"RefillRecord"> | boolean
+  inventoryAvailable?: Prisma.BoolNullableFilter<"RefillRecord"> | boolean | null
   notes?: Prisma.StringNullableFilter<"RefillRecord"> | string | null
   patient?: Prisma.XOR<Prisma.PatientScalarRelationFilter, Prisma.PatientWhereInput>
   medication?: Prisma.XOR<Prisma.MedicationRecordScalarRelationFilter, Prisma.MedicationRecordWhereInput>
@@ -323,6 +387,13 @@ export type RefillRecordOrderByWithRelationInput = {
   requestedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
   remindedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
   dispensedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
+  cycleNumber?: Prisma.SortOrder
+  packagesNeeded?: Prisma.SortOrder
+  patientRemindedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
+  pharmacyWarnedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
+  pharmacyUrgentWarnedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
+  isUnconfirmedOverdue?: Prisma.SortOrder
+  inventoryAvailable?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   patient?: Prisma.PatientOrderByWithRelationInput
   medication?: Prisma.MedicationRecordOrderByWithRelationInput
@@ -346,6 +417,13 @@ export type RefillRecordWhereUniqueInput = Prisma.AtLeast<{
   requestedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
   remindedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
   dispensedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  cycleNumber?: Prisma.IntFilter<"RefillRecord"> | number
+  packagesNeeded?: Prisma.IntFilter<"RefillRecord"> | number
+  patientRemindedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFilter<"RefillRecord"> | boolean
+  inventoryAvailable?: Prisma.BoolNullableFilter<"RefillRecord"> | boolean | null
   notes?: Prisma.StringNullableFilter<"RefillRecord"> | string | null
   patient?: Prisma.XOR<Prisma.PatientScalarRelationFilter, Prisma.PatientWhereInput>
   medication?: Prisma.XOR<Prisma.MedicationRecordScalarRelationFilter, Prisma.MedicationRecordWhereInput>
@@ -366,6 +444,13 @@ export type RefillRecordOrderByWithAggregationInput = {
   requestedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
   remindedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
   dispensedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
+  cycleNumber?: Prisma.SortOrder
+  packagesNeeded?: Prisma.SortOrder
+  patientRemindedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
+  pharmacyWarnedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
+  pharmacyUrgentWarnedAtUtc?: Prisma.SortOrderInput | Prisma.SortOrder
+  isUnconfirmedOverdue?: Prisma.SortOrder
+  inventoryAvailable?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.RefillRecordCountOrderByAggregateInput
   _avg?: Prisma.RefillRecordAvgOrderByAggregateInput
@@ -392,6 +477,13 @@ export type RefillRecordScalarWhereWithAggregatesInput = {
   requestedAtUtc?: Prisma.DateTimeNullableWithAggregatesFilter<"RefillRecord"> | Date | string | null
   remindedAtUtc?: Prisma.DateTimeNullableWithAggregatesFilter<"RefillRecord"> | Date | string | null
   dispensedAtUtc?: Prisma.DateTimeNullableWithAggregatesFilter<"RefillRecord"> | Date | string | null
+  cycleNumber?: Prisma.IntWithAggregatesFilter<"RefillRecord"> | number
+  packagesNeeded?: Prisma.IntWithAggregatesFilter<"RefillRecord"> | number
+  patientRemindedAtUtc?: Prisma.DateTimeNullableWithAggregatesFilter<"RefillRecord"> | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.DateTimeNullableWithAggregatesFilter<"RefillRecord"> | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.DateTimeNullableWithAggregatesFilter<"RefillRecord"> | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolWithAggregatesFilter<"RefillRecord"> | boolean
+  inventoryAvailable?: Prisma.BoolNullableWithAggregatesFilter<"RefillRecord"> | boolean | null
   notes?: Prisma.StringNullableWithAggregatesFilter<"RefillRecord"> | string | null
 }
 
@@ -408,6 +500,13 @@ export type RefillRecordCreateInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
   patient: Prisma.PatientCreateNestedOneWithoutRefillsInput
   medication: Prisma.MedicationRecordCreateNestedOneWithoutRefillsInput
@@ -428,6 +527,13 @@ export type RefillRecordUncheckedCreateInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
 }
 
@@ -444,6 +550,13 @@ export type RefillRecordUpdateInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   patient?: Prisma.PatientUpdateOneRequiredWithoutRefillsNestedInput
   medication?: Prisma.MedicationRecordUpdateOneRequiredWithoutRefillsNestedInput
@@ -464,6 +577,13 @@ export type RefillRecordUncheckedUpdateInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -482,6 +602,13 @@ export type RefillRecordCreateManyInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
 }
 
@@ -498,6 +625,13 @@ export type RefillRecordUpdateManyMutationInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -516,6 +650,13 @@ export type RefillRecordUncheckedUpdateManyInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -544,6 +685,13 @@ export type RefillRecordCountOrderByAggregateInput = {
   requestedAtUtc?: Prisma.SortOrder
   remindedAtUtc?: Prisma.SortOrder
   dispensedAtUtc?: Prisma.SortOrder
+  cycleNumber?: Prisma.SortOrder
+  packagesNeeded?: Prisma.SortOrder
+  patientRemindedAtUtc?: Prisma.SortOrder
+  pharmacyWarnedAtUtc?: Prisma.SortOrder
+  pharmacyUrgentWarnedAtUtc?: Prisma.SortOrder
+  isUnconfirmedOverdue?: Prisma.SortOrder
+  inventoryAvailable?: Prisma.SortOrder
   notes?: Prisma.SortOrder
 }
 
@@ -551,6 +699,8 @@ export type RefillRecordAvgOrderByAggregateInput = {
   daysSupply?: Prisma.SortOrder
   unitsDispensed?: Prisma.SortOrder
   refillLeadDays?: Prisma.SortOrder
+  cycleNumber?: Prisma.SortOrder
+  packagesNeeded?: Prisma.SortOrder
 }
 
 export type RefillRecordMaxOrderByAggregateInput = {
@@ -568,6 +718,13 @@ export type RefillRecordMaxOrderByAggregateInput = {
   requestedAtUtc?: Prisma.SortOrder
   remindedAtUtc?: Prisma.SortOrder
   dispensedAtUtc?: Prisma.SortOrder
+  cycleNumber?: Prisma.SortOrder
+  packagesNeeded?: Prisma.SortOrder
+  patientRemindedAtUtc?: Prisma.SortOrder
+  pharmacyWarnedAtUtc?: Prisma.SortOrder
+  pharmacyUrgentWarnedAtUtc?: Prisma.SortOrder
+  isUnconfirmedOverdue?: Prisma.SortOrder
+  inventoryAvailable?: Prisma.SortOrder
   notes?: Prisma.SortOrder
 }
 
@@ -586,6 +743,13 @@ export type RefillRecordMinOrderByAggregateInput = {
   requestedAtUtc?: Prisma.SortOrder
   remindedAtUtc?: Prisma.SortOrder
   dispensedAtUtc?: Prisma.SortOrder
+  cycleNumber?: Prisma.SortOrder
+  packagesNeeded?: Prisma.SortOrder
+  patientRemindedAtUtc?: Prisma.SortOrder
+  pharmacyWarnedAtUtc?: Prisma.SortOrder
+  pharmacyUrgentWarnedAtUtc?: Prisma.SortOrder
+  isUnconfirmedOverdue?: Prisma.SortOrder
+  inventoryAvailable?: Prisma.SortOrder
   notes?: Prisma.SortOrder
 }
 
@@ -593,6 +757,8 @@ export type RefillRecordSumOrderByAggregateInput = {
   daysSupply?: Prisma.SortOrder
   unitsDispensed?: Prisma.SortOrder
   refillLeadDays?: Prisma.SortOrder
+  cycleNumber?: Prisma.SortOrder
+  packagesNeeded?: Prisma.SortOrder
 }
 
 export type RefillRecordCreateNestedManyWithoutPatientInput = {
@@ -683,14 +849,6 @@ export type EnumRefillStatusFieldUpdateOperationsInput = {
   set?: $Enums.RefillStatus
 }
 
-export type NullableDecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
-}
-
 export type RefillRecordCreateWithoutPatientInput = {
   id?: string
   pharmacyId: string
@@ -704,6 +862,13 @@ export type RefillRecordCreateWithoutPatientInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
   medication: Prisma.MedicationRecordCreateNestedOneWithoutRefillsInput
 }
@@ -722,6 +887,13 @@ export type RefillRecordUncheckedCreateWithoutPatientInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
 }
 
@@ -769,6 +941,13 @@ export type RefillRecordScalarWhereInput = {
   requestedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
   remindedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
   dispensedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  cycleNumber?: Prisma.IntFilter<"RefillRecord"> | number
+  packagesNeeded?: Prisma.IntFilter<"RefillRecord"> | number
+  patientRemindedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.DateTimeNullableFilter<"RefillRecord"> | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFilter<"RefillRecord"> | boolean
+  inventoryAvailable?: Prisma.BoolNullableFilter<"RefillRecord"> | boolean | null
   notes?: Prisma.StringNullableFilter<"RefillRecord"> | string | null
 }
 
@@ -785,6 +964,13 @@ export type RefillRecordCreateWithoutMedicationInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
   patient: Prisma.PatientCreateNestedOneWithoutRefillsInput
 }
@@ -803,6 +989,13 @@ export type RefillRecordUncheckedCreateWithoutMedicationInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
 }
 
@@ -846,6 +1039,13 @@ export type RefillRecordCreateManyPatientInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
 }
 
@@ -862,6 +1062,13 @@ export type RefillRecordUpdateWithoutPatientInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   medication?: Prisma.MedicationRecordUpdateOneRequiredWithoutRefillsNestedInput
 }
@@ -880,6 +1087,13 @@ export type RefillRecordUncheckedUpdateWithoutPatientInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -897,6 +1111,13 @@ export type RefillRecordUncheckedUpdateManyWithoutPatientInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -914,6 +1135,13 @@ export type RefillRecordCreateManyMedicationInput = {
   requestedAtUtc?: Date | string | null
   remindedAtUtc?: Date | string | null
   dispensedAtUtc?: Date | string | null
+  cycleNumber?: number
+  packagesNeeded?: number
+  patientRemindedAtUtc?: Date | string | null
+  pharmacyWarnedAtUtc?: Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Date | string | null
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean | null
   notes?: string | null
 }
 
@@ -930,6 +1158,13 @@ export type RefillRecordUpdateWithoutMedicationInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   patient?: Prisma.PatientUpdateOneRequiredWithoutRefillsNestedInput
 }
@@ -948,6 +1183,13 @@ export type RefillRecordUncheckedUpdateWithoutMedicationInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -965,6 +1207,13 @@ export type RefillRecordUncheckedUpdateManyWithoutMedicationInput = {
   requestedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   remindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cycleNumber?: Prisma.IntFieldUpdateOperationsInput | number
+  packagesNeeded?: Prisma.IntFieldUpdateOperationsInput | number
+  patientRemindedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  pharmacyUrgentWarnedAtUtc?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isUnconfirmedOverdue?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  inventoryAvailable?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -985,6 +1234,13 @@ export type RefillRecordSelect<ExtArgs extends runtime.Types.Extensions.Internal
   requestedAtUtc?: boolean
   remindedAtUtc?: boolean
   dispensedAtUtc?: boolean
+  cycleNumber?: boolean
+  packagesNeeded?: boolean
+  patientRemindedAtUtc?: boolean
+  pharmacyWarnedAtUtc?: boolean
+  pharmacyUrgentWarnedAtUtc?: boolean
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean
   notes?: boolean
   patient?: boolean | Prisma.PatientDefaultArgs<ExtArgs>
   medication?: boolean | Prisma.MedicationRecordDefaultArgs<ExtArgs>
@@ -1005,6 +1261,13 @@ export type RefillRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   requestedAtUtc?: boolean
   remindedAtUtc?: boolean
   dispensedAtUtc?: boolean
+  cycleNumber?: boolean
+  packagesNeeded?: boolean
+  patientRemindedAtUtc?: boolean
+  pharmacyWarnedAtUtc?: boolean
+  pharmacyUrgentWarnedAtUtc?: boolean
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean
   notes?: boolean
   patient?: boolean | Prisma.PatientDefaultArgs<ExtArgs>
   medication?: boolean | Prisma.MedicationRecordDefaultArgs<ExtArgs>
@@ -1025,6 +1288,13 @@ export type RefillRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   requestedAtUtc?: boolean
   remindedAtUtc?: boolean
   dispensedAtUtc?: boolean
+  cycleNumber?: boolean
+  packagesNeeded?: boolean
+  patientRemindedAtUtc?: boolean
+  pharmacyWarnedAtUtc?: boolean
+  pharmacyUrgentWarnedAtUtc?: boolean
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean
   notes?: boolean
   patient?: boolean | Prisma.PatientDefaultArgs<ExtArgs>
   medication?: boolean | Prisma.MedicationRecordDefaultArgs<ExtArgs>
@@ -1045,10 +1315,17 @@ export type RefillRecordSelectScalar = {
   requestedAtUtc?: boolean
   remindedAtUtc?: boolean
   dispensedAtUtc?: boolean
+  cycleNumber?: boolean
+  packagesNeeded?: boolean
+  patientRemindedAtUtc?: boolean
+  pharmacyWarnedAtUtc?: boolean
+  pharmacyUrgentWarnedAtUtc?: boolean
+  isUnconfirmedOverdue?: boolean
+  inventoryAvailable?: boolean
   notes?: boolean
 }
 
-export type RefillRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pharmacyId" | "patientId" | "medicationId" | "status" | "lastDispensedOn" | "daysSupply" | "unitsDispensed" | "expectedRunOutOn" | "refillDueOn" | "refillLeadDays" | "requestedAtUtc" | "remindedAtUtc" | "dispensedAtUtc" | "notes", ExtArgs["result"]["refillRecord"]>
+export type RefillRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "pharmacyId" | "patientId" | "medicationId" | "status" | "lastDispensedOn" | "daysSupply" | "unitsDispensed" | "expectedRunOutOn" | "refillDueOn" | "refillLeadDays" | "requestedAtUtc" | "remindedAtUtc" | "dispensedAtUtc" | "cycleNumber" | "packagesNeeded" | "patientRemindedAtUtc" | "pharmacyWarnedAtUtc" | "pharmacyUrgentWarnedAtUtc" | "isUnconfirmedOverdue" | "inventoryAvailable" | "notes", ExtArgs["result"]["refillRecord"]>
 export type RefillRecordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   patient?: boolean | Prisma.PatientDefaultArgs<ExtArgs>
   medication?: boolean | Prisma.MedicationRecordDefaultArgs<ExtArgs>
@@ -1087,6 +1364,13 @@ export type $RefillRecordPayload<ExtArgs extends runtime.Types.Extensions.Intern
     requestedAtUtc: Date | null
     remindedAtUtc: Date | null
     dispensedAtUtc: Date | null
+    cycleNumber: number
+    packagesNeeded: number
+    patientRemindedAtUtc: Date | null
+    pharmacyWarnedAtUtc: Date | null
+    pharmacyUrgentWarnedAtUtc: Date | null
+    isUnconfirmedOverdue: boolean
+    inventoryAvailable: boolean | null
     notes: string | null
   }, ExtArgs["result"]["refillRecord"]>
   composites: {}
@@ -1527,6 +1811,13 @@ export interface RefillRecordFieldRefs {
   readonly requestedAtUtc: Prisma.FieldRef<"RefillRecord", 'DateTime'>
   readonly remindedAtUtc: Prisma.FieldRef<"RefillRecord", 'DateTime'>
   readonly dispensedAtUtc: Prisma.FieldRef<"RefillRecord", 'DateTime'>
+  readonly cycleNumber: Prisma.FieldRef<"RefillRecord", 'Int'>
+  readonly packagesNeeded: Prisma.FieldRef<"RefillRecord", 'Int'>
+  readonly patientRemindedAtUtc: Prisma.FieldRef<"RefillRecord", 'DateTime'>
+  readonly pharmacyWarnedAtUtc: Prisma.FieldRef<"RefillRecord", 'DateTime'>
+  readonly pharmacyUrgentWarnedAtUtc: Prisma.FieldRef<"RefillRecord", 'DateTime'>
+  readonly isUnconfirmedOverdue: Prisma.FieldRef<"RefillRecord", 'Boolean'>
+  readonly inventoryAvailable: Prisma.FieldRef<"RefillRecord", 'Boolean'>
   readonly notes: Prisma.FieldRef<"RefillRecord", 'String'>
 }
     

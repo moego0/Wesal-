@@ -99,6 +99,9 @@ const PARAM_PREFIX = "param.";
 export async function updatePharmacyProfile(formData: FormData): Promise<void> {
   const { locale, user } = await settingsManager(formData);
 
+  const is24HoursRaw = formData.get("is24Hours");
+  const is24Hours = is24HoursRaw === "true" || is24HoursRaw === "on" || is24HoursRaw === "1";
+
   const result = await applyPharmacyProfile(
     { pharmacyId: user.pharmacyId, userId: user.userId },
     {
@@ -107,6 +110,11 @@ export async function updatePharmacyProfile(formData: FormData): Promise<void> {
       defaultLocale: field(formData, "defaultLocale"),
       quietHoursStart: field(formData, "quietHoursStart"),
       quietHoursEnd: field(formData, "quietHoursEnd"),
+      is24Hours,
+      operatingHoursStart: field(formData, "operatingHoursStart"),
+      operatingHoursEnd: field(formData, "operatingHoursEnd"),
+      refillLeadDays: field(formData, "refillLeadDays"),
+      refillUrgentDays: field(formData, "refillUrgentDays"),
       reason: field(formData, "reason"),
     },
   );

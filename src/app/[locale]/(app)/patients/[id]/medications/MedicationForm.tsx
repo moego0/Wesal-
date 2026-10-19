@@ -23,6 +23,15 @@ import {
   updateMedicationWithSchedule,
   type MedicationFormState,
 } from "@/server/medications/actions";
+import {
+  calculateDailyConsumption,
+  calculateDaysSupply,
+  calculateDepletionDate,
+  calculateRefillAlertDates,
+  calculateTotalPackages,
+  calculateTreatmentDays,
+  calculateTreatmentEndDate,
+} from "@/lib/refills";
 
 /**
  * The medication form, for both adding and editing.
@@ -43,9 +52,6 @@ import {
 const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
 
 const MODES = Object.values(ScheduleMode).filter(
-  // INTERVAL_HOURS exists in the schema but has no editor here: the materializer
-  // and the schema support it, and offering a mode this form cannot configure
-  // correctly (no interval field) would write a schedule nobody can reason about.
   (mode) => mode !== "INTERVAL_HOURS",
 );
 
@@ -73,6 +79,13 @@ export type MedicationFormRecord = {
   /** `YYYY-MM-DD`. */
   startedOn: string;
   status: string;
+  unitsPerPackage?: number | null;
+  unitsPerDose?: number | null;
+  dosesPerDay?: number | null;
+  treatmentDurationValue?: number | null;
+  treatmentDurationUnit?: string | null;
+  prescriberDoctorName?: string | null;
+  prescriberDoctorPhone?: string | null;
 };
 
 export type ScheduleFormRecord = {
@@ -153,6 +166,25 @@ export function MedicationForm({
    */
   const [code, setCode] = useState(medication?.medicationCode ?? "");
 
+  const [unitsPerPackage, setUnitsPerPackage] = useState(
+    () => medication?.unitsPerPackage?.toString() ?? "30",
+  );
+  const [unitsPerDose, setUnitsPerDose] = useState(
+    () => medication?.unitsPerDose?.toString() ?? "1",
+  );
+  const [dosesPerDay, setDosesPerDay] = useState(
+    () => medication?.dosesPerDay?.toString() ?? "1",
+  );
+  const [treatmentDurationValue, setTreatmentDurationValue] = useState(
+    () => medication?.treatmentDurationValue?.toString() ?? "6",
+  );
+  const [treatmentDurationUnit, setTreatmentDurationUnit] = useState(
+    () => medication?.treatmentDurationUnit ?? "MONTHS",
+  );
+  const [startedOn, setStartedOn] = useState(
+    () => medication?.startedOn ?? today,
+  );
+
   /*
    * A refused submission replaces what is in the editor with exactly what was
    * submitted, so the pharmacist corrects the one value that was wrong instead
@@ -168,6 +200,12 @@ export function MedicationForm({
     if (state.values.mode === "PRN" || state.values.mode === "FIXED_TIMES_OF_DAY") {
       setMode(state.values.mode);
     }
+    if (state.values.unitsPerPackage) setUnitsPerPackage(state.values.unitsPerPackage);
+    if (state.values.unitsPerDose) setUnitsPerDose(state.values.unitsPerDose);
+    if (state.values.dosesPerDay) setDosesPerDay(state.values.dosesPerDay);
+    if (state.values.treatmentDurationValue) setTreatmentDurationValue(state.values.treatmentDurationValue);
+    if (state.values.treatmentDurationUnit) setTreatmentDurationUnit(state.values.treatmentDurationUnit);
+    if (state.values.startedOn) setStartedOn(state.values.startedOn);
   }, [state]);
 
   const value = (name: string, fallback = "") =>
@@ -179,6 +217,43 @@ export function MedicationForm({
   };
 
   const fixedTimes = mode === "FIXED_TIMES_OF_DAY";
+
+  const numPackage = Number(unitsPerPackage);
+  const numDose = Number(unitsPerDose);
+  const numFreq = Number(dosesPerDay);
+  const numDur = Number(treatmentDurationValue);
+
+  let daily = 1;
+  let daysSupply = 30;
+  let depletionDateStr = "";
+  let packagesNeeded = 1;
+  let alert5DaysStr = "";
+  let alert1DayStr = "";
+
+  if (numPackage > 0 && numDose > 0 && numFreq > 0) {
+    daily = calculateDailyConsumption(numDose, numFreq);
+    daysSupply = calculateDaysSupply(numPackage, daily);
+    const startD = new Date(`${startedOn || today}T00:00:00.000Z`);
+    if (!Number.isNaN(startD.getTime())) {
+      const depD = calculateDepletionDate(startD, daysSupply);
+      depletionDateStr = depD.toISOString().slice(0, 10);
+      const alerts = calculateRefillAlertDates(depD, 5, 1);
+      alert5DaysStr = alerts.warningDate.toISOString().slice(0, 10);
+      alert1DayStr = alerts.urgentDate.toISOString().slice(0, 10);
+
+      if (numDur > 0 && ["DAYS", "WEEKS", "MONTHS"].includes(treatmentDurationUnit)) {
+        const treatmentEnd = calculateTreatmentEndDate(
+          startD,
+          numDur,
+          treatmentDurationUnit as "DAYS" | "WEEKS" | "MONTHS",
+        );
+        const treatmentDays = calculateTreatmentDays(startD, treatmentEnd);
+        packagesNeeded = calculateTotalPackages(treatmentDays, daysSupply);
+      }
+    }
+  }
+
+  const isAr = locale === "ar";
 
   return (
     <form action={formAction} className="space-y-6">
@@ -263,18 +338,159 @@ export function MedicationForm({
             </Field>
 
             <Field label={t("startedOn")} error={error("startedOn")} required htmlFor="startedOn">
-              {/* A date is a numeric run: without `dir="ltr"` the digits of
-                  `2026-11-03` reorder against an RTL paragraph. */}
               <input
                 id="startedOn"
                 name="startedOn"
                 type="date"
                 dir="ltr"
                 required
-                defaultValue={value("startedOn", medication?.startedOn ?? today)}
+                value={startedOn}
+                onChange={(e) => setStartedOn(e.target.value)}
                 className={inputClass}
               />
             </Field>
+
+            <Field
+              label={locale === "ar" ? "اسم الطبيب المعالج" : "Prescribing Doctor's Name"}
+              hint={locale === "ar" ? "الاسم الكامل للطبيب المعالج" : "Full name of the prescribing doctor"}
+              error={error("prescriberDoctorName")}
+              htmlFor="prescriberDoctorName"
+            >
+              <input
+                id="prescriberDoctorName"
+                name="prescriberDoctorName"
+                type="text"
+                maxLength={120}
+                defaultValue={value("prescriberDoctorName", medication?.prescriberDoctorName ?? "")}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field
+              label={locale === "ar" ? "هاتف الطبيب المعالج" : "Prescribing Doctor's Phone"}
+              hint={locale === "ar" ? "للتواصل السريع عند الاستفسار" : "Phone number for clarifications"}
+              error={error("prescriberDoctorPhone")}
+              htmlFor="prescriberDoctorPhone"
+            >
+              <input
+                id="prescriberDoctorPhone"
+                name="prescriberDoctorPhone"
+                type="tel"
+                dir="ltr"
+                maxLength={40}
+                defaultValue={value("prescriberDoctorPhone", medication?.prescriberDoctorPhone ?? "")}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field
+              label={locale === "ar" ? "حجم العبوة (كبسولة / قرص)" : "Units per Package"}
+              hint={locale === "ar" ? "عدد الأقراص في العبوة الواحدة (مثال: 30)" : "Tablets/capsules per box (e.g. 30)"}
+              error={error("unitsPerPackage")}
+              required
+              htmlFor="unitsPerPackage"
+            >
+              <input
+                id="unitsPerPackage"
+                name="unitsPerPackage"
+                type="number"
+                min={1}
+                max={1000}
+                required
+                dir="ltr"
+                value={unitsPerPackage}
+                onChange={(e) => setUnitsPerPackage(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label={locale === "ar" ? "الجرعة المقررة (لكل جرعة)" : "Dosage (units/dose)"}
+                hint={locale === "ar" ? "مثال: 1 قرص" : "e.g. 1 tablet"}
+                error={error("unitsPerDose")}
+                required
+                htmlFor="unitsPerDose"
+              >
+                <input
+                  id="unitsPerDose"
+                  name="unitsPerDose"
+                  type="number"
+                  step="any"
+                  min={0.1}
+                  max={100}
+                  required
+                  dir="ltr"
+                  value={unitsPerDose}
+                  onChange={(e) => setUnitsPerDose(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field
+                label={locale === "ar" ? "التكرار (مرات يومياً)" : "Frequency (doses/day)"}
+                hint={locale === "ar" ? "مثال: 1 مرة يومياً" : "e.g. 1 time daily"}
+                error={error("dosesPerDay")}
+                required
+                htmlFor="dosesPerDay"
+              >
+                <input
+                  id="dosesPerDay"
+                  name="dosesPerDay"
+                  type="number"
+                  min={1}
+                  max={24}
+                  required
+                  dir="ltr"
+                  value={dosesPerDay}
+                  onChange={(e) => setDosesPerDay(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label={locale === "ar" ? "مدة العلاج المقررة" : "Treatment Duration"}
+                hint={locale === "ar" ? "القيمة العددية (مثال: 6)" : "Duration value (e.g. 6)"}
+                error={error("treatmentDurationValue")}
+                required
+                htmlFor="treatmentDurationValue"
+              >
+                <input
+                  id="treatmentDurationValue"
+                  name="treatmentDurationValue"
+                  type="number"
+                  min={1}
+                  max={365}
+                  required
+                  dir="ltr"
+                  value={treatmentDurationValue}
+                  onChange={(e) => setTreatmentDurationValue(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field
+                label={locale === "ar" ? "الوحدة الزمنية" : "Duration Unit"}
+                error={error("treatmentDurationUnit")}
+                required
+                htmlFor="treatmentDurationUnit"
+              >
+                <select
+                  id="treatmentDurationUnit"
+                  name="treatmentDurationUnit"
+                  required
+                  value={treatmentDurationUnit}
+                  onChange={(e) => setTreatmentDurationUnit(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="DAYS">{locale === "ar" ? "أيام" : "Days"}</option>
+                  <option value="WEEKS">{locale === "ar" ? "أسابيع" : "Weeks"}</option>
+                  <option value="MONTHS">{locale === "ar" ? "أشهر" : "Months"}</option>
+                </select>
+              </Field>
+            </div>
 
             <Field label={t("prescriber")} hint={t("prescriberHint")} error={error("prescriber")} htmlFor="prescriber">
               <input
@@ -331,6 +547,85 @@ export function MedicationForm({
               className={textareaClass}
             />
           </Field>
+        </CardBody>
+      </Card>
+
+      {/* ── Medication Refill & Depletion Forecast Card ── */}
+      <Card>
+        <CardHeader
+          title={locale === "ar" ? "خطة تجديد الصرف ونفاد الدواء (حساب تقويم تلقائي)" : "Medication Refill & Depletion Forecast"}
+          subtitle={
+            locale === "ar"
+              ? "حساب دقيق لموعد نفاد كل عبوة وتواريخ تنبيه الصيدلية والمريض"
+              : "Automated calendar calculation for depletion dates and proactive alerts"
+          }
+        />
+        <CardBody className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {locale === "ar" ? "الاستهلاك اليومي" : "Daily Consumption"}
+              </p>
+              <p className="mt-1 text-lg font-bold text-slate-800 dark:text-slate-100">
+                {daily} {locale === "ar" ? "وحدة / يوم" : "units/day"}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                {locale === "ar" ? "الجرعة × التكرار اليومي" : "Dosage × Frequency"}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {locale === "ar" ? "مدة كفاية العبوة" : "Package Days Supply"}
+              </p>
+              <p className="mt-1 text-lg font-bold text-teal-700 dark:text-teal-400">
+                {daysSupply} {locale === "ar" ? "يوم" : "days"}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                {locale === "ar" ? "تكفي العبوة الحالية" : "One package lasts"}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {locale === "ar" ? "إجمالي العبوات المطلوبة" : "Total Packages Needed"}
+              </p>
+              <p className="mt-1 text-lg font-bold text-indigo-700 dark:text-indigo-400">
+                ~{packagesNeeded} {locale === "ar" ? "عبوات" : "packages"}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                {locale === "ar" ? "طوال مدة الكورس العلاجي" : "Throughout full treatment"}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {locale === "ar" ? "تاريخ نفاد العبوة" : "Expected Depletion Date"}
+              </p>
+              <p className="mt-1 text-lg font-bold text-amber-700 dark:text-amber-400" dir="ltr">
+                {depletionDateStr || "—"}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                {locale === "ar" ? "موعد تجديد الصرف القادم" : "Next refill due date"}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-teal-100 bg-teal-50/60 p-3 text-xs text-teal-900 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-200">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <span className="font-semibold">
+                🔔 {locale === "ar" ? "جدول التنبيهات الآلية:" : "Automated Alert Schedule:"}
+              </span>
+              <span>
+                <strong>{locale === "ar" ? "تنبيه الصيدلية والمريض (قبل 5 أيام):" : "Pharmacy & Patient Alert (5 days out):"}</strong>{" "}
+                <span dir="ltr">{alert5DaysStr || "—"}</span>
+              </span>
+              <span>
+                <strong>{locale === "ar" ? "تنبيه عاجل للصيدلية (قبل 1 يوم):" : "Urgent Alert (1 day out):"}</strong>{" "}
+                <span dir="ltr">{alert1DayStr || "—"}</span>
+              </span>
+            </div>
+          </div>
         </CardBody>
       </Card>
 

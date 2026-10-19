@@ -2337,6 +2337,11 @@ export const PharmacyScalarFieldEnum = {
   defaultLocale: 'defaultLocale',
   quietHoursStart: 'quietHoursStart',
   quietHoursEnd: 'quietHoursEnd',
+  is24Hours: 'is24Hours',
+  operatingHoursStart: 'operatingHoursStart',
+  operatingHoursEnd: 'operatingHoursEnd',
+  refillLeadDays: 'refillLeadDays',
+  refillUrgentDays: 'refillUrgentDays',
   status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -2458,6 +2463,13 @@ export const MedicationRecordScalarFieldEnum = {
   instructionsTextAr: 'instructionsTextAr',
   instructionsTextEn: 'instructionsTextEn',
   prescriberText: 'prescriberText',
+  prescriberDoctorName: 'prescriberDoctorName',
+  prescriberDoctorPhone: 'prescriberDoctorPhone',
+  unitsPerPackage: 'unitsPerPackage',
+  unitsPerDose: 'unitsPerDose',
+  dosesPerDay: 'dosesPerDay',
+  treatmentDurationValue: 'treatmentDurationValue',
+  treatmentDurationUnit: 'treatmentDurationUnit',
   indicationText: 'indicationText',
   status: 'status',
   startedOn: 'startedOn',
@@ -2706,6 +2718,13 @@ export const RefillRecordScalarFieldEnum = {
   requestedAtUtc: 'requestedAtUtc',
   remindedAtUtc: 'remindedAtUtc',
   dispensedAtUtc: 'dispensedAtUtc',
+  cycleNumber: 'cycleNumber',
+  packagesNeeded: 'packagesNeeded',
+  patientRemindedAtUtc: 'patientRemindedAtUtc',
+  pharmacyWarnedAtUtc: 'pharmacyWarnedAtUtc',
+  pharmacyUrgentWarnedAtUtc: 'pharmacyUrgentWarnedAtUtc',
+  isUnconfirmedOverdue: 'isUnconfirmedOverdue',
+  inventoryAvailable: 'inventoryAvailable',
   notes: 'notes'
 } as const
 
@@ -2930,6 +2949,27 @@ export type ListEnumLocaleFieldRefInput<$PrismaModel> = FieldRefInputType<$Prism
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+/**
+ * Reference to a field of type 'Int[]'
+ */
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
  * Reference to a field of type 'DateTime'
  */
 export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -2954,13 +2994,6 @@ export type EnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Prism
  * Reference to a field of type 'UserStatus[]'
  */
 export type ListEnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -3035,6 +3068,20 @@ export type ListEnumConsentCaptureMethodFieldRefInput<$PrismaModel> = FieldRefIn
 
 
 /**
+ * Reference to a field of type 'Decimal'
+ */
+export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+/**
+ * Reference to a field of type 'Decimal[]'
+ */
+export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+/**
  * Reference to a field of type 'MedicationStatus'
  */
 export type EnumMedicationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MedicationStatus'>
@@ -3073,20 +3120,6 @@ export type EnumScheduleModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
  * Reference to a field of type 'ScheduleMode[]'
  */
 export type ListEnumScheduleModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScheduleMode[]'>
-    
-
-
-/**
- * Reference to a field of type 'Int[]'
- */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-/**
- * Reference to a field of type 'Int'
- */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
     
 
 
@@ -3325,20 +3358,6 @@ export type EnumRefillStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
  * Reference to a field of type 'RefillStatus[]'
  */
 export type ListEnumRefillStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RefillStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Decimal'
- */
-export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
-    
-
-
-/**
- * Reference to a field of type 'Decimal[]'
- */
-export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
     
 
 
