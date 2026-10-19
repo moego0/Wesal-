@@ -392,12 +392,26 @@ export async function sendReminder(
     doseText,
   });
 
-  let result =
+  const languageCode = event.patient.preferredLocale === "EN" ? "en" : "ar";
+
+  // The template actually requested, recorded on the dispatch row below in
+  // preference to inferring it from `plan.kind` at write time. There is only
+  // one template today; naming it explicitly means a future send path cannot
+  // silently make the audit row claim the wrong one was used.
+  const sentTemplateName = plan.kind === "template" ? DOSE_REMINDER_TEMPLATE : null;
+
+  // No fallback to Meta's stock `hello_world` template. Sending that when the
+  // approved template is missing made a production patient receive "Hello
+  // World" — worse than a failed send, because it looks like spam and says
+  // nothing about their medication. A missing template is a configuration
+  // error: let the dispatch fail, record `template_not_found`, and fix the WABA
+  // the number belongs to.
+  const result =
     plan.kind === "template"
       ? await provider.sendTemplate({
           to: event.patient.phoneE164,
           templateName: DOSE_REMINDER_TEMPLATE,
-          languageCode: event.patient.preferredLocale === "EN" ? "en" : "ar",
+          languageCode,
           variables: {
             // The patient's name is in the body on purpose: shared family
             // handsets are common, and a reminder that does not say who it is
@@ -424,22 +438,6 @@ export async function sendReminder(
           correlationId: dispatchId,
         });
 
-  // In test / sandbox mode, if the custom reminder template is not registered in Meta yet,
-  // fall back to hello_world so the reminder reaches the patient's WhatsApp.
-  if (!result.ok && result.errorCode === "template_not_found") {
-    console.warn(
-      `[dispatch] template "${DOSE_REMINDER_TEMPLATE}" not found in Meta, falling back to "hello_world"`,
-    );
-    result = await provider.sendTemplate({
-      to: event.patient.phoneE164,
-      templateName: "hello_world",
-      languageCode: "en",
-      variables: {},
-      callbackData: dispatchId,
-      correlationId: dispatchId,
-    });
-  }
-
   if (result.ok) {
     await systemPrisma.$transaction(async (tx: Tx) => {
       await tx.reminderDispatch.update({
@@ -448,7 +446,7 @@ export async function sendReminder(
           status: "SENT",
           provider: provider.name,
           providerMessageId: result.providerMessageId,
-          providerTemplateName: plan.kind === "template" ? DOSE_REMINDER_TEMPLATE : null,
+          providerTemplateName: sentTemplateName,
           acceptedAtUtc: result.acceptedAtUtc,
         },
       });
@@ -485,6 +483,17 @@ export async function sendReminder(
   if (!result.retryable) {
     // Definitive rejection: no amount of retrying will help (bad number,
     // template not approved, recipient not on WhatsApp).
+    //
+    // Logged because the job itself completes successfully in this case — the
+    // worker's "permanently failed" log only fires for exhausted retries — and
+    // the template-missing case is otherwise invisible apart from a FAILED row
+    // nobody is watching.
+    console.error(
+      `[dispatch] reminder ${event.id} failed permanently: ${result.errorCode}` +
+        (sentTemplateName ? ` (template ${sentTemplateName}/${languageCode})` : "") +
+        ` — ${result.errorMessage}`,
+    );
+
     await systemPrisma.reminderEvent.updateMany({
       where: { id: event.id, deliveryState: "SENDING" },
       data: { deliveryState: "FAILED", cancelReason: result.errorCode },
