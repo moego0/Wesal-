@@ -12,7 +12,18 @@ async function main() {
     callbackData: "test-meta-send-1",
     correlationId: "test-meta-send-1",
   });
-  console.log("Template result:", res1);
+  console.log("Template result (ar):", res1);
+
+  console.log("\nTesting provider.sendTemplate with wasal_dose_reminder_v1 (en)...");
+  const resEn = await provider.sendTemplate({
+    to: "+201011054894",
+    templateName: "wasal_dose_reminder_v1",
+    languageCode: "en",
+    variables: { "1": "Mohamed", "2": "Panadol", "3": "22:30" },
+    callbackData: "test-meta-send-en",
+    correlationId: "test-meta-send-en",
+  });
+  console.log("Template result (en):", resEn);
 
   console.log("\nTesting provider.sendTemplate with hello_world...");
   const res2 = await provider.sendTemplate({
