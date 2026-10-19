@@ -21,6 +21,7 @@ export type Permission =
   | "followup:read"
   | "followup:write"
   | "report:read"
+  | "message:read"
   | "audit:read"
   | "user:manage"
   | "settings:manage";
@@ -37,25 +38,30 @@ const ALL_PERMISSIONS: readonly Permission[] = [
   "followup:read",
   "followup:write",
   "report:read",
+  "message:read",
   "audit:read",
   "user:manage",
   "settings:manage",
 ];
 
 /**
- * The audit log is the only read a VIEWER cannot have: it exposes who changed
- * what for every patient in the pharmacy, which is a supervisory view, not a
- * clinical one.
+ * The audit log and message log are reads a VIEWER cannot have: they expose supervisory
+ * history, not clinical care.
  */
-const VIEWER_EXCLUDED = new Set<Permission>(["audit:read"]);
+const VIEWER_EXCLUDED = new Set<Permission>(["audit:read", "message:read"]);
 
 /**
  * Admin-only powers. A PHARMACIST runs the clinical side of the pharmacy but
- * must not be able to grant roles, change pharmacy settings, or read the
- * audit trail — separation that matters when the audit trail is the record of
- * what the pharmacist did.
+ * must not be able to grant roles, change pharmacy settings, read the
+ * audit trail, or view the message delivery log — separation that matters when
+ * supervisory logs judge or record what the pharmacist did.
  */
-const ADMIN_ONLY = new Set<Permission>(["user:manage", "settings:manage", "audit:read"]);
+const ADMIN_ONLY = new Set<Permission>([
+  "user:manage",
+  "settings:manage",
+  "audit:read",
+  "message:read",
+]);
 
 const PERMISSIONS_BY_ROLE: Record<PharmacyRole, ReadonlySet<Permission>> = {
   PHARMACY_ADMIN: new Set(ALL_PERMISSIONS),

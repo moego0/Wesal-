@@ -40,10 +40,9 @@ const NAV_ITEMS: ReadonlyArray<{
   // No permission guard: every role holds `followup:read`, so there is nobody
   // who can see this link and be refused by the page behind it.
   { key: "followUps", href: "/follow-ups" },
-  // The delivery log and the reports are both `report:read`. An ASSISTANT does
-  // not hold it — enrollment work, not analytics — so without the guard they
-  // would be shown two links that dead-end on a permission error.
-  { key: "messages", href: "/messages", permission: "report:read" },
+  // The delivery log is `message:read` (pharmacy admin only; hidden from pharmacist and assistant).
+  // The reports are `report:read`.
+  { key: "messages", href: "/messages", permission: "message:read" },
   { key: "reports", href: "/reports", permission: "report:read" },
   // Only a pharmacy admin can open Settings, so only a pharmacy admin is shown
   // the way in. A link to a page that will refuse them is a dead end dressed up

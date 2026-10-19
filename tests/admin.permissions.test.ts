@@ -222,10 +222,17 @@ describe("reading the audit log is an administrator's power", () => {
     );
     expect(readers).toEqual(["PHARMACY_ADMIN"]);
 
+    const messageReaders = Object.values(PharmacyRole).filter((role) =>
+      hasPermission({ role }, "message:read"),
+    );
+    expect(messageReaders).toEqual(["PHARMACY_ADMIN"]);
+
     // A PHARMACIST runs the clinical side. Catches: a pharmacist retuning the
-    // alert thresholds that judge their own follow-up work, or editing staff.
+    // alert thresholds that judge their own follow-up work, editing staff, or
+    // reading message delivery logs.
     expect(permissionsFor("PHARMACIST").has("settings:manage")).toBe(false);
     expect(permissionsFor("PHARMACIST").has("user:manage")).toBe(false);
+    expect(permissionsFor("PHARMACIST").has("message:read")).toBe(false);
     expect(permissionsFor("PHARMACIST").has("followup:write")).toBe(true);
 
     // The exact ASSISTANT set. Catches: a permission added to ASSISTANT by

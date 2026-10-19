@@ -135,7 +135,7 @@ async function MessageLog({
 }) {
   const raw = await searchParams;
   const user = await requireSessionUser(locale);
-  requirePermission(user, "report:read");
+  requirePermission(user, "message:read");
 
   const t = await getTranslations({ locale, namespace: "messages" });
   const tEnums = await getTranslations({ locale, namespace: "enums" });
