@@ -229,7 +229,7 @@ export async function sweepRefills(now: Date = new Date()): Promise<{
 
         const bodyText = isAr
           ? `مرحباً ${patName}،\n\nمن المتوقع نفاد عبوة دواء ${medName} خلال حوالي ${daysRemaining} أيام.\n\nيرجى التواصل مع الصيدلية لترتيب موعد صرف العبوة القادمة لضمان استمرار علاجك دون انقطاع.\n\n— وِصال`
-          : `Hello ${patName},\n\nYour ${medName} package is expected to run out in approximately ${daysRemaining} days.\n\nPlease contact your pharmacy to arrange your next refill so your treatment continues without interruption.\n\n— Wesal`;
+          : `Hello ${patName},\n\nYour ${medName} package is expected to run out in approximately ${daysRemaining} days.\n\nPlease contact your pharmacy to arrange your next refill so your treatment continues without interruption.\n\n— Wessal`;
 
         try {
           const sendResult = await messaging.sendText({
