@@ -27,6 +27,7 @@ import {
   Tr,
   buttonClass,
 } from "@/components/ui";
+import { DeleteMedicationButton } from "@/components/medications/DeleteMedicationButton";
 import { requireSessionUser } from "@/server/auth/current-user";
 import { hasPermission } from "@/server/auth/rbac";
 import {
@@ -300,12 +301,20 @@ async function PatientRecord({
                   </p>
 
                   {canManageMedications ? (
-                    <Link
-                      href={`/patients/${patient.id}/medications/${medication.id}/edit`}
-                      className={buttonClass("ghost", "sm")}
-                    >
-                      {t("editMedication")}
-                    </Link>
+                    <div className="flex items-center gap-1.5">
+                      <Link
+                        href={`/patients/${patient.id}/medications/${medication.id}/edit`}
+                        className={buttonClass("ghost", "sm")}
+                      >
+                        {t("editMedication")}
+                      </Link>
+                      <DeleteMedicationButton
+                        medicationId={medication.id}
+                        medicationName={medication.medicationNameText}
+                        locale={locale}
+                        size="xs"
+                      />
+                    </div>
                   ) : null}
                 </div>
 

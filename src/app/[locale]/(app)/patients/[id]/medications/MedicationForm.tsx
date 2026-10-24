@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import { MedicationStatus, ScheduleMode } from "@/generated/prisma/enums";
+import { DeleteMedicationButton } from "@/components/medications/DeleteMedicationButton";
 import {
   createMedicationWithSchedule,
   updateMedicationWithSchedule,
@@ -821,6 +822,15 @@ export function MedicationForm({
         <Link href={`/patients/${patientId}`} className={buttonClass("ghost")}>
           {t("cancel")}
         </Link>
+        {editing && medication ? (
+          <div className="ms-auto">
+            <DeleteMedicationButton
+              medicationId={medication.id}
+              medicationName={medication.name}
+              locale={locale}
+            />
+          </div>
+        ) : null}
       </FormActions>
     </form>
   );

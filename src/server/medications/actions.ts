@@ -1132,3 +1132,76 @@ export async function updateMedicationWithSchedule(
 
   return redirect({ href: `/patients/${medication.patientId}`, locale });
 }
+
+/**
+ * Permanently delete a medication and its associated schedules, reminders, and refills.
+ */
+export async function deleteMedication(formData: FormData): Promise<void> {
+  const medicationId = field(formData, "medicationId");
+  const locale = safeLocale(field(formData, "locale"));
+
+  if (!medicationId) {
+    throw new Error("Missing medicationId");
+  }
+
+  const user = await requireSessionUser(locale);
+  requirePermission(user, "medication:write");
+  requirePermission(user, "schedule:write");
+
+  const medication = await systemPrisma.medicationRecord.findFirst({
+    where: { id: medicationId, pharmacyId: user.pharmacyId },
+    select: { id: true, patientId: true, medicationNameText: true },
+  });
+
+  if (!medication) {
+    throw new Error("Medication not found");
+  }
+
+  await systemPrisma.$transaction(async (tx) => {
+    // 1. Unlink optional relations in follow-up cases and interventions
+    await tx.followUpCase.updateMany({
+      where: { medicationId: medication.id, pharmacyId: user.pharmacyId },
+      data: { medicationId: null },
+    });
+    await tx.pharmacistIntervention.updateMany({
+      where: { medicationId: medication.id, pharmacyId: user.pharmacyId },
+      data: { medicationId: null },
+    });
+
+    // 2. Delete Refills
+    await tx.refillRecord.deleteMany({
+      where: { medicationId: medication.id, pharmacyId: user.pharmacyId },
+    });
+
+    // 3. Delete ReminderEvents
+    await tx.reminderEvent.deleteMany({
+      where: { medicationId: medication.id, pharmacyId: user.pharmacyId },
+    });
+
+    // 4. Delete Schedules
+    await tx.medicationSchedule.deleteMany({
+      where: { medicationId: medication.id, pharmacyId: user.pharmacyId },
+    });
+
+    // 5. Delete MedicationRecord
+    await tx.medicationRecord.delete({
+      where: { id: medication.id },
+    });
+
+    // 6. Write Audit
+    await writeAudit(tx as unknown as AuditWriter, {
+      pharmacyId: user.pharmacyId,
+      actorType: "USER",
+      actorUserId: user.userId,
+      entityType: "MedicationRecord",
+      entityId: medication.id,
+      action: AUDIT_ACTION.MEDICATION_DELETED,
+      before: {
+        medicationNameText: medication.medicationNameText,
+      },
+      reason: "Medication deleted by user",
+    });
+  });
+
+  return redirect({ href: `/patients/${medication.patientId}`, locale });
+}

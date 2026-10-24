@@ -77,6 +77,9 @@
     "save": "Save",
     "saving": "Saving…",
     "cancel": "Back",
+    "delete": "Delete medication",
+    "deleteConfirm": "Are you sure you want to delete this medication and all its schedules and reminders? This cannot be undone.",
+    "deleting": "Deleting…",
     "errors": {
       "REQUIRED": "This field is required",
       "INVALID": "That value is not valid",
