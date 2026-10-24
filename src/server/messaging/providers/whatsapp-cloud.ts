@@ -231,21 +231,32 @@ export class WhatsAppCloudProvider implements MessagingProvider {
     return this.cached;
   }
 
+  private resolveMetaLanguageCode(templateName: string, languageCode: "ar" | "en"): string {
+    if (templateName === "hello_world" && languageCode === "en") {
+      return "en_US";
+    }
+    if (templateName === "wasal_dose_reminder_v1" && languageCode === "ar") {
+      // In Meta WhatsApp Manager, templates created in Egypt are commonly registered as
+      // `ar_EG` (Arabic (EGY)), which Meta treats as distinct from standard `ar`.
+      return "ar_EG";
+    }
+    return languageCode;
+  }
+
   // ── sends ────────────────────────────────────────────────────────────────
 
   async sendTemplate(req: SendTemplateRequest): Promise<SendResult> {
     const values = Object.values(req.variables);
+    const primaryCode = this.resolveMetaLanguageCode(req.templateName, req.languageCode);
 
-    return this.post({
+    const buildPayload = (code: string) => ({
       messaging_product: "whatsapp",
       recipient_type: "individual",
       to: digits(req.to),
       type: "template",
       template: {
         name: req.templateName,
-        language: {
-          code: req.templateName === "hello_world" && req.languageCode === "en" ? "en_US" : req.languageCode,
-        },
+        language: { code },
         // Rapid-reply buttons are intentionally NOT parameterised: their
         // payloads come from the approved template and per-message values are
         // impossible. See the class comment.
@@ -255,6 +266,27 @@ export class WhatsAppCloudProvider implements MessagingProvider {
       },
       biz_opaque_callback_data: req.callbackData,
     });
+
+    const res = await this.post(buildPayload(primaryCode));
+    if (!res.ok && res.errorCode === PROVIDER_ERROR.TEMPLATE_NOT_FOUND) {
+      const fallbackCode =
+        primaryCode === "ar_EG"
+          ? "ar"
+          : primaryCode === "ar"
+            ? "ar_EG"
+            : primaryCode === "en_US"
+              ? "en"
+              : primaryCode === "en"
+                ? "en_US"
+                : null;
+
+      if (fallbackCode) {
+        const fallbackRes = await this.post(buildPayload(fallbackCode));
+        if (fallbackRes.ok) return fallbackRes;
+      }
+    }
+
+    return res;
   }
 
   async sendInteractive(req: SendInteractiveRequest): Promise<SendResult> {
