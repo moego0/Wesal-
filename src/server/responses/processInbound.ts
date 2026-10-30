@@ -1,7 +1,7 @@
 import type { MessageIntent, ResponseChannel, ResponseState } from "@/generated/prisma/enums";
 import { systemPrisma } from "@/server/db";
 import type { InboundKind, NormalizedInboundEvent } from "@/server/messaging/provider";
-import { answerFromButtonLabel, parseButtonPayload } from "@/server/messaging/menu";
+import { answerFromButtonLabel, normalizeLabel, parseButtonPayload } from "@/server/messaging/menu";
 import { getMessagingProvider } from "@/server/messaging/factory";
 import { branchForTap, sendRefinementMenu } from "@/server/scheduling/dispatch";
 import { writeSystemAudit } from "@/server/audit";
@@ -129,6 +129,115 @@ export async function processInboundMessage(
       reminderEventId: attribution.kind === "EVENT" ? attribution.reminderEventId : null,
     });
     return { status: "OPTED_OUT", patientId };
+  }
+
+  // ── Refill interactive response handling ──
+  const rawPayload = event.kind === "BUTTON_REPLY" ? event.buttonPayload : null;
+  const rawTitle = event.kind === "BUTTON_REPLY" ? event.title : event.kind === "TEXT" ? event.text : null;
+  const normalizedTitle = rawTitle ? normalizeLabel(rawTitle) : "";
+
+  const isRefillPickup =
+    rawPayload?.includes(":PICKUP") ||
+    normalizedTitle.includes("استلم العبوه") ||
+    normalizedTitle.includes("هاجي استلم") ||
+    normalizedTitle.includes("ساستلم");
+
+  const isRefillSnooze =
+    rawPayload?.includes(":SNOOZE") ||
+    normalizedTitle.includes("ذكرني غدا") ||
+    normalizedTitle.includes("فكرني بكره") ||
+    normalizedTitle.includes("ذكرني بكره");
+
+  if (isRefillPickup || isRefillSnooze) {
+    const match = rawPayload?.match(/^refill:([^:]+):/);
+    const refillId = match ? match[1] : undefined;
+
+    const refill = refillId
+      ? await systemPrisma.refillRecord.findFirst({
+          where: { id: refillId, pharmacyId, patientId },
+          include: { medication: true, patient: true },
+        })
+      : await systemPrisma.refillRecord.findFirst({
+          where: { pharmacyId, patientId, status: { in: ["ESTIMATED", "DUE", "PENDING", "REQUESTED"] } },
+          orderBy: { expectedRunOutOn: "asc" },
+          include: { medication: true, patient: true },
+        });
+
+    if (refill) {
+      if (isRefillPickup) {
+        await systemPrisma.refillRecord.update({
+          where: { id: refill.id },
+          data: { status: "REQUESTED", requestedAtUtc: row.receivedAtUtc },
+        });
+
+        const dedupeKey = `REFILL_REQ|${pharmacyId}|${refill.id}|c${refill.cycleNumber}`;
+        const existingAlert = await systemPrisma.alert.findFirst({
+          where: { dedupeKey, status: { in: ["OPEN", "ACKNOWLEDGED"] } },
+        });
+
+        if (!existingAlert) {
+          await systemPrisma.alert.create({
+            data: {
+              pharmacyId,
+              patientId,
+              medicationId: refill.medicationId,
+              ruleKey: "REFILL_REQUESTED",
+              ruleVersion: 1,
+              dedupeKey,
+              severity: "NORMAL",
+              status: "OPEN",
+              titleAr: `طلب تجديد عبوة: ${refill.patient.fullName}`,
+              titleEn: `Refill Requested: ${refill.patient.fullName}`,
+              detailAr: `أكّد المريض حضوره لاستلام عبوة ${refill.medication.medicationNameText}. يُرجى تجهيزها للصرف.`,
+              detailEn: `Patient confirmed they will collect ${refill.medication.medicationNameText}. Please prepare for dispensing.`,
+              evidence: {
+                refillId: refill.id,
+                cycleNumber: refill.cycleNumber,
+              },
+            },
+          });
+        }
+
+        try {
+          await getMessagingProvider().sendText({
+            to: refill.patient.phoneE164,
+            bodyText: `شكراً لتأكيدكم 🌿 تم تسجيل طلب تجهيز عبوة ${refill.medication.medicationNameText} في الصيدلية، وسنكون بانتظار تشريفكم لاستلامها.\n\n— وِصال`,
+            callbackData: `refill_ack_${refill.id}`,
+            correlationId: `refill_ack_${refill.id}`,
+          });
+        } catch (err) {
+          console.error("[processInbound] Failed to send refill pickup ack:", err);
+        }
+      } else {
+        await systemPrisma.refillRecord.update({
+          where: { id: refill.id },
+          data: { remindedAtUtc: row.receivedAtUtc },
+        });
+
+        try {
+          await getMessagingProvider().sendText({
+            to: refill.patient.phoneE164,
+            bodyText: `تم تأجيل التذكير 🌿 سنقوم بتذكيركم مجدداً غداً بمشيئة الله لمتابعة موعد صرف العبوة.\n\n— وِصال`,
+            callbackData: `refill_snooze_${refill.id}`,
+            correlationId: `refill_snooze_${refill.id}`,
+          });
+        } catch (err) {
+          console.error("[processInbound] Failed to send refill snooze ack:", err);
+        }
+      }
+
+      await finalise(row.id, { status: "ROUTED", patientId, reminderEventId: null });
+      return {
+        status: "ROUTED",
+        patientId,
+        reminderEventId: null,
+        answer: null,
+        applied: true,
+        caseId: null,
+        snoozeEventId: null,
+        menuSent: false,
+      };
+    }
   }
 
   // ── resolve the dose ──

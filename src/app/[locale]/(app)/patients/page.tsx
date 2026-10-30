@@ -181,6 +181,7 @@ async function PatientResults({
                 <Th>{t("columns.name")}</Th>
                 <Th>{t("columns.phone")}</Th>
                 <Th>{t("columns.status")}</Th>
+                <Th>{locale === "ar" ? "الصيدلي المتابع" : "Pharmacist"}</Th>
                 <Th align="end">{t("columns.adherence")}</Th>
                 <Th align="end">{t("columns.medications")}</Th>
                 <Th align="end">{t("columns.cases")}</Th>
@@ -207,6 +208,15 @@ async function PatientResults({
                   </Td>
                   <Td>
                     <Pill tone={PATIENT_STATUS_TONE[row.status]}>{tStatus(row.status)}</Pill>
+                  </Td>
+                  <Td className="text-xs text-slate-600 dark:text-slate-300">
+                    {row.assignedPharmacistName ? (
+                      <span className="font-medium text-teal-800 dark:text-teal-300">
+                        {row.assignedPharmacistName}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </Td>
                   <Td align="end">
                     <span

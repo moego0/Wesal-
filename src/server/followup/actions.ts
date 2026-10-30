@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { DateTime } from "luxon";
 import { hasLocale } from "next-intl";
 import { z } from "zod";
@@ -15,6 +16,7 @@ import { PermissionDeniedError, requirePermission } from "@/server/auth/rbac";
 import type { SessionContext } from "@/server/auth/session";
 import { prisma } from "@/server/db";
 import { canTransition, isTerminalStatus } from "@/server/queries/followups";
+import { getMessagingProvider } from "@/server/messaging/factory";
 
 /**
  * Writes for the follow-up case screen.
@@ -436,4 +438,214 @@ export async function changeCaseStatus(
   if (outcome.kind === "illegal") return fail("ILLEGAL_TRANSITION", outcome.from, outcome.to);
 
   return { kind: "ok", status: outcome.status, interventionId: null };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Specialized Follow-up & Intervention Actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Action: Quick resolve a problem case with clinical intervention categorization.
+ */
+export async function quickResolveProblemCase(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const auth = await authorize(formData);
+  if ("denied" in auth) return { ok: false, error: "FORBIDDEN" };
+  const user = auth.user;
+
+  const caseId = field(formData, "caseId");
+  if (!caseId) return { ok: false, error: "INVALID_INPUT" };
+
+  const category = field(formData, "category") || "GENERAL";
+  const notes = field(formData, "notes") || "تم التواصل وحل المشكلة بنجاح";
+  const doctorName = field(formData, "doctorName");
+
+  const now = new Date();
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const kase = await tx.followUpCase.findFirst({
+        where: { id: caseId, pharmacyId: user.pharmacyId },
+        select: { id: true, patientId: true, medicationId: true },
+      });
+      if (!kase) throw new Error("NOT_FOUND");
+
+      let interventionType: InterventionType = "PHONE_CALL";
+      if (category === "DOCTOR_REFERRAL") {
+        interventionType = "REFERRAL";
+      } else if (category === "DOSE_CLARIFICATION") {
+        interventionType = "DOSE_CHANGE";
+      } else if (category === "SIDE_EFFECT") {
+        interventionType = "PATIENT_EDUCATION";
+      }
+
+      const taggedNotes = `[${category}] ${notes}${doctorName ? ` (تم التحويل إلى الطبيب: ${doctorName})` : ""}`;
+
+      await tx.pharmacistIntervention.create({
+        data: {
+          pharmacyId: user.pharmacyId,
+          caseId: kase.id,
+          patientId: kase.patientId,
+          medicationId: kase.medicationId,
+          interventionType,
+          outcome: "PATIENT_CONFIRMED",
+          notes: taggedNotes,
+          performedByUserId: user.userId,
+          performedAtUtc: now,
+        },
+      });
+
+      await tx.followUpCase.updateMany({
+        where: { id: kase.id, pharmacyId: user.pharmacyId },
+        data: {
+          status: "RESOLVED",
+          resolvedAtUtc: now,
+          assigneeUserId: user.userId,
+          resolutionNotes: taggedNotes,
+          resolutionCode: category,
+        },
+      });
+
+      await writeAudit(tx as unknown as AuditWriter, {
+        pharmacyId: user.pharmacyId,
+        actorType: "USER",
+        actorUserId: user.userId,
+        entityType: "FollowUpCase",
+        entityId: kase.id,
+        action: AUDIT_ACTION.CASE_RESOLVED,
+        after: { status: "RESOLVED", resolvedAtUtc: now.toISOString() },
+        reason: taggedNotes,
+      });
+    });
+
+    revalidatePath("/[locale]/(app)/follow-ups", "page");
+    return { ok: true };
+  } catch (error) {
+    console.error("[quickResolveProblemCase] Failed:", error);
+    return { ok: false, error: "FAILED" };
+  }
+}
+
+/**
+ * Action: Resend follow-up reminder message to a patient regarding a missed dose.
+ */
+export async function resendFollowUpReminder(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const auth = await authorize(formData);
+  if ("denied" in auth) return { ok: false, error: "FORBIDDEN" };
+  const user = auth.user;
+
+  const patientId = field(formData, "patientId");
+  const medicationId = field(formData, "medicationId");
+  const customMessage = field(formData, "customMessage");
+
+  if (!patientId || !medicationId) return { ok: false, error: "INVALID_INPUT" };
+
+  try {
+    const [patient, medication, pharmacy] = await Promise.all([
+      prisma.patient.findFirst({
+        where: { id: patientId, pharmacyId: user.pharmacyId },
+        select: { id: true, fullName: true, phoneE164: true },
+      }),
+      prisma.medicationRecord.findFirst({
+        where: { id: medicationId, pharmacyId: user.pharmacyId },
+        select: { id: true, medicationNameText: true },
+      }),
+      prisma.pharmacy.findUnique({
+        where: { id: user.pharmacyId },
+        select: { name: true },
+      }),
+    ]);
+
+    if (!patient || !medication) return { ok: false, error: "NOT_FOUND" };
+
+    const pharmacyName = pharmacy?.name || "الصيدلية";
+    const bodyText =
+      customMessage ||
+      `مرحباً ${patient.fullName}،\n\nتود صيدلية ${pharmacyName} عبر وِصال الاطمئنان عليكم والتذكير بمتابعة تناول جرعة دواء ${medication.medicationNameText} المقررة.\n\nيرجى تأكيد تناول الجرعة أو إبلاغنا في حال واجهتكم أي مشكلة أو استفسار.\n\nمع أطيب تمنياتنا لكم بالصحة والعافية.`;
+
+    const messaging = getMessagingProvider();
+    const sendResult = await messaging.sendText({
+      to: patient.phoneE164,
+      bodyText,
+      callbackData: `manual_followup_${patient.id}_${Date.now()}`,
+      correlationId: `manual_followup_${patient.id}`,
+    });
+
+    if (!sendResult.ok) {
+      return { ok: false, error: sendResult.errorMessage || "SEND_FAILED" };
+    }
+
+    // Log the contact as an intervention
+    await prisma.pharmacistIntervention.create({
+      data: {
+        pharmacyId: user.pharmacyId,
+        patientId: patient.id,
+        medicationId: medication.id,
+        interventionType: "WHATSAPP_MESSAGE",
+        outcome: "LEFT_MESSAGE",
+        notes: `[FOLLOW_UP] تم إرسال رسالة تذكير ومتابعة للجرعة عبر الواتساب: "${bodyText.slice(0, 100)}..."`,
+        performedByUserId: user.userId,
+        performedAtUtc: new Date(),
+      },
+    });
+
+    revalidatePath("/[locale]/(app)/follow-ups", "page");
+    return { ok: true };
+  } catch (error) {
+    console.error("[resendFollowUpReminder] Failed:", error);
+    return { ok: false, error: "FAILED" };
+  }
+}
+
+/**
+ * Action: Create a manual clinical intervention in the Clinical Intervention Log.
+ */
+export async function recordClinicalInterventionDirect(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const auth = await authorize(formData);
+  if ("denied" in auth) return { ok: false, error: "FORBIDDEN" };
+  const user = auth.user;
+
+  const patientId = field(formData, "patientId");
+  if (!patientId) return { ok: false, error: "INVALID_INPUT" };
+
+  const medicationId = field(formData, "medicationId");
+  const category = field(formData, "category") || "GENERAL";
+  const notes = field(formData, "notes") || "";
+  const doctorName = field(formData, "doctorName");
+  const outcomeRaw = field(formData, "outcome") || "PATIENT_CONFIRMED";
+
+  const outcome = (InterventionOutcome as Record<string, string>)[outcomeRaw]
+    ? (outcomeRaw as InterventionOutcome)
+    : "PATIENT_CONFIRMED";
+
+  let interventionType: InterventionType = "PATIENT_EDUCATION";
+  if (category === "DOCTOR_REFERRAL") {
+    interventionType = "REFERRAL";
+  } else if (category === "DOSE_CLARIFICATION") {
+    interventionType = "DOSE_CHANGE";
+  } else if (category === "PHONE_CALL") {
+    interventionType = "PHONE_CALL";
+  }
+
+  const taggedNotes = `[${category}] ${notes}${doctorName ? ` (تم التحويل إلى الطبيب: ${doctorName})` : ""}`;
+
+  try {
+    await prisma.pharmacistIntervention.create({
+      data: {
+        pharmacyId: user.pharmacyId,
+        patientId,
+        medicationId: medicationId || null,
+        interventionType,
+        outcome,
+        notes: taggedNotes,
+        performedByUserId: user.userId,
+        performedAtUtc: new Date(),
+      },
+    });
+
+    revalidatePath("/[locale]/(app)/follow-ups", "page");
+    return { ok: true };
+  } catch (error) {
+    console.error("[recordClinicalInterventionDirect] Failed:", error);
+    return { ok: false, error: "FAILED" };
+  }
 }

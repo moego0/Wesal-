@@ -148,6 +148,7 @@ export type PatientListRow = {
   /** 0–1, or null when nothing in the window was scorable. */
   adherence: number | null;
   scorableDoses: number;
+  assignedPharmacistName: string | null;
 };
 
 export type ListPatientsOptions = {
@@ -205,6 +206,7 @@ export async function listPatients(
         phoneE164: true,
         status: true,
         createdAt: true,
+        createdByUserId: true,
         _count: {
           select: {
             medications: { where: { status: "ACTIVE" } },
@@ -223,7 +225,7 @@ export async function listPatients(
 
   // One grouped query for the whole page instead of one per patient. This is the
   // query that would otherwise turn a 50-patient list into 51 round trips.
-  const [scored, alerts] = await Promise.all([
+  const [scored, alerts, latestInterventions, latestCases] = await Promise.all([
     prisma.reminderEvent.groupBy({
       by: ["patientId", "responseState"],
       where: { ...scorableDoseCore(pharmacyId, since), patientId: { in: ids } },
@@ -238,7 +240,35 @@ export async function listPatients(
       },
       _count: { _all: true },
     }),
+    prisma.pharmacistIntervention.findMany({
+      where: { pharmacyId, patientId: { in: ids } },
+      orderBy: { performedAtUtc: "desc" },
+      distinct: ["patientId"],
+      select: { patientId: true, performedByUserId: true },
+    }),
+    prisma.followUpCase.findMany({
+      where: { pharmacyId, patientId: { in: ids }, assigneeUserId: { not: null } },
+      orderBy: { openedAtUtc: "desc" },
+      distinct: ["patientId"],
+      select: { patientId: true, assigneeUserId: true },
+    }),
   ]);
+
+  const allUserIds = [
+    ...patients.map((p) => p.createdByUserId).filter((id): id is string => Boolean(id)),
+    ...latestInterventions.map((i) => i.performedByUserId),
+    ...latestCases.map((c) => c.assigneeUserId).filter((id): id is string => Boolean(id)),
+  ];
+  const uniqueUserIds = [...new Set(allUserIds)];
+  const users = uniqueUserIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: uniqueUserIds } },
+        select: { id: true, fullName: true },
+      })
+    : [];
+  const userNameMap = new Map(users.map((u) => [u.id, u.fullName]));
+  const interventionUserMap = new Map(latestInterventions.map((i) => [i.patientId, i.performedByUserId]));
+  const caseUserMap = new Map(latestCases.map((c) => [c.patientId, c.assigneeUserId]));
 
   const tally = tallyAdherence(scored);
 
@@ -246,6 +276,13 @@ export async function listPatients(
 
   const rows: PatientListRow[] = patients.map((p) => {
     const scoredRow = tally.get(p.id);
+    const assignedUserId =
+      interventionUserMap.get(p.id) ??
+      caseUserMap.get(p.id) ??
+      p.createdByUserId ??
+      null;
+    const assignedPharmacistName = assignedUserId ? userNameMap.get(assignedUserId) ?? null : null;
+
     return {
       id: p.id,
       fullName: p.fullName,
@@ -260,6 +297,7 @@ export async function listPatients(
       // yesterday has not missed anything, and showing 0% would say they had.
       adherence: scoredRow && scoredRow.total > 0 ? scoredRow.taken / scoredRow.total : null,
       scorableDoses: scoredRow?.total ?? 0,
+      assignedPharmacistName,
     };
   });
 
@@ -310,7 +348,32 @@ export async function getPatientDetail(pharmacyId: string, patientId: string) {
   // to another pharmacy must be indistinguishable from one that does not exist.
   if (!patient) return null;
 
-  return patient;
+  const [latestIntervention, latestCase] = await Promise.all([
+    prisma.pharmacistIntervention.findFirst({
+      where: { pharmacyId, patientId },
+      orderBy: { performedAtUtc: "desc" },
+      select: { performedByUserId: true },
+    }),
+    prisma.followUpCase.findFirst({
+      where: { pharmacyId, patientId, assigneeUserId: { not: null } },
+      orderBy: { openedAtUtc: "desc" },
+      select: { assigneeUserId: true },
+    }),
+  ]);
+
+  const assignedUserId =
+    latestIntervention?.performedByUserId ??
+    latestCase?.assigneeUserId ??
+    patient.createdByUserId;
+
+  const assignedUser = assignedUserId
+    ? await prisma.user.findUnique({ where: { id: assignedUserId }, select: { fullName: true } })
+    : null;
+
+  return {
+    ...patient,
+    assignedPharmacistName: assignedUser?.fullName ?? null,
+  };
 }
 
 /**

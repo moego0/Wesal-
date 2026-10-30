@@ -235,10 +235,9 @@ export class WhatsAppCloudProvider implements MessagingProvider {
     if (templateName === "hello_world" && languageCode === "en") {
       return "en_US";
     }
-    if (templateName === "wasal_dose_reminder_v1" && languageCode === "ar") {
-      // In Meta WhatsApp Manager, templates created in Egypt are commonly registered as
-      // `ar_EG` (Arabic (EGY)), which Meta treats as distinct from standard `ar`.
-      return "ar_EG";
+    if (templateName === "wasal_dose_reminder_v2" && languageCode === "ar") {
+      // V2 is formal Arabic (فصحى), not region-specific.
+      return "ar";
     }
     return languageCode;
   }

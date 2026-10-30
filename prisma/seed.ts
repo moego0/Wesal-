@@ -351,41 +351,43 @@ async function main() {
   await systemPrisma.whatsAppTemplate.create({
     data: {
       pharmacyId: pharmacy.id,
-      providerName: "wasal_dose_reminder_v1",
+      providerName: "wasal_dose_reminder_v2",
       languageCode: "ar",
       category: "UTILITY",
       status: "APPROVED",
       lastSyncedAtUtc: new Date(),
       components: [
         {
-          // The body is deliberately wordier than the message needs to be.
-          // Meta rejects a template whose variables are too dense for its
-          // length ("this template has too many variables for its length"),
-          // and the three variables here are all load-bearing — the patient's
-          // name because shared family handsets are common, see
-          // `sendReminder`. The only remaining lever is static text, so the
-          // sentence after the times exists to satisfy that ratio. Do not
-          // tighten this wording without re-submitting to Meta. Keep it
-          // purely transactional: promotional filler is what gets a reminder
-          // reclassified as MARKETING, at roughly 18x the per-patient cost.
+          // V2 body — formal Arabic (فصحى). Four variables: pharmacy name,
+          // patient name, medication and dose time. The body is deliberately
+          // wordy: Meta rejects a template whose variables are too dense for
+          // its length. Keep it purely transactional: promotional filler is
+          // what gets a reminder reclassified as MARKETING, at roughly 18x
+          // the per-patient cost.
           type: "BODY",
           text:
-            "تذكير بموعد الدواء لـ {{1}}: معاد {{2}} الساعة {{3}}.\n" +
-            "خدت الدواء؟ رد علينا بالزرار اللي تحت، ولو عندك أي سؤال أو مشكلة كلم الصيدلية على طول.",
+            "صيدلية {{1}}\n" +
+            "السيد/السيدة {{2}}،\n\n" +
+            "نود تذكيركم بموعد تناول دواء {{3}} اليوم في تمام الساعة {{4}}.\n\n" +
+            "يرجى تأكيد تناول الجرعة من خلال اختيار الزر المناسب أدناه." +
+            "وفي حال وجود أي استفسار أو مشكلة متعلقة بالدواء، يُرجى الضغط على زر «لديّ مشكلة» أدناه، " +
+            "لتتمكن الصيدلية من متابعة الأمر معكم.\n\n" +
+            "مع أطيب تمنياتنا لكم بالشفاء العاجل ودوام الصحة والعافية.",
         },
         {
           type: "BUTTONS",
           buttons: [
-            { type: "QUICK_REPLY", text: "خدته ✅" },
-            { type: "QUICK_REPLY", text: "لسه ❌" },
-            { type: "QUICK_REPLY", text: "عندي مشكلة ⚠️" },
+            { type: "QUICK_REPLY", text: "✅تم تناول الجرعة" },
+            { type: "QUICK_REPLY", text: "❌لم أتناول الجرعة" },
+            { type: "QUICK_REPLY", text: "⚠️لديّ مشكلة بالدواء" },
           ],
         },
       ],
       variablesSchema: [
-        { index: 1, name: "patient_name", example: "فاطمة" },
-        { index: 2, name: "medication", example: "ميتفورمين" },
-        { index: 3, name: "time", example: "٨:٠٠ ص" },
+        { index: 1, name: "pharmacy_name", example: "الشفاء" },
+        { index: 2, name: "patient_name", example: "أحمد محمد" },
+        { index: 3, name: "medication", example: "ميتفورمين 500mg" },
+        { index: 4, name: "time", example: "16:35" },
       ],
     },
   });

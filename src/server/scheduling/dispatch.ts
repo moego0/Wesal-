@@ -28,7 +28,7 @@ const RECONCILE_DEADLINE_MS = 2 * 60_000;
 /** Do not send a dose reminder older than this, whatever the late window says. */
 const SWEEP_FLOOR_MS = 6 * 3600_000;
 
-export const DOSE_REMINDER_TEMPLATE = "wasal_dose_reminder_v1";
+export const DOSE_REMINDER_TEMPLATE = "wasal_dose_reminder_v2";
 
 export type ClaimOutcome =
   | { status: "claimed"; dispatchId: string; eventId: string }
@@ -413,26 +413,29 @@ export async function sendReminder(
           templateName: DOSE_REMINDER_TEMPLATE,
           languageCode,
           variables: {
-            // The patient's name is in the body on purpose: shared family
-            // handsets are common, and a reminder that does not say who it is
-            // for is worse than useless.
-            "1": patientName,
-            "2": medicationName,
-            "3": doseText,
+            // {{1}} pharmacy name — identifies the sender on shared family handsets.
+            "1": pharmacy?.name ?? "",
+            // {{2}} patient name — shared handsets are common, so the reminder
+            // must say who it is for.
+            "2": patientName,
+            // {{3}} medication name
+            "3": medicationName,
+            // {{4}} dose time
+            "4": doseText,
           },
           callbackData: dispatchId,
           correlationId: dispatchId,
         })
       : await provider.sendInteractive({
           to: event.patient.phoneE164,
-          // Mirrors the approved template's body so a patient gets the same
-          // wording whether the message goes out free-form or as a template.
-          // The trailing sentence is not padding for its own sake: it is what
-          // keeps the template inside Meta's variable-to-length ratio. See the
-          // body comment in prisma/seed.ts.
           bodyText:
-            `تذكير بموعد الدواء لـ ${patientName}: معاد ${medicationName} الساعة ${doseText}.\n` +
-            `خدت الدواء؟ رد علينا بالزرار اللي تحت، ولو عندك أي سؤال أو مشكلة كلم الصيدلية على طول.`,
+            `صيدلية ${pharmacy?.name ?? ""}\n` +
+            `السيد/السيدة ${patientName}،\n\n` +
+            `نود تذكيركم بموعد تناول دواء ${medicationName} اليوم في تمام الساعة ${doseText}.\n\n` +
+            `يرجى تأكيد تناول الجرعة من خلال اختيار الزر المناسب أدناه.` +
+            `وفي حال وجود أي استفسار أو مشكلة متعلقة بالدواء، يُرجى الضغط على زر «لديّ مشكلة» أدناه، ` +
+            `لتتمكن الصيدلية من متابعة الأمر معكم.\n\n` +
+            `مع أطيب تمنياتنا لكم بالشفاء العاجل ودوام الصحة والعافية.`,
           buttons: reminderButtons(event.id),
           callbackData: dispatchId,
           correlationId: dispatchId,

@@ -50,11 +50,22 @@ export type MenuButton = {
  * inbound matcher changes with them, which is why they are not inlined at the
  * call site.
  */
-export const TEMPLATE_BUTTON_LABELS = {
+export const TEMPLATE_V1_BUTTON_LABELS = {
   TAKEN: "خدته ✅",
   NOT_YET: "لسه ❌",
   PROBLEM: "عندي مشكلة ⚠️",
 } as const;
+
+/**
+ * Approved template button labels — formal Arabic (فصحى) for V2.
+ */
+export const TEMPLATE_BUTTON_LABELS = {
+  TAKEN: "✅تم تناول الجرعة",
+  NOT_YET: "❌لم أتناول الجرعة",
+  PROBLEM: "⚠️لديّ مشكلة بالدواء",
+} as const;
+
+export const TEMPLATE_V2_BUTTON_LABELS = TEMPLATE_BUTTON_LABELS;
 
 export function templateButtons(): MenuButton[] {
   return [
@@ -75,9 +86,9 @@ export function templateButtons(): MenuButton[] {
  */
 export function reminderButtons(reminderEventId: string): MenuButton[] {
   return [
-    { id: `evt:${reminderEventId}:TAKEN`, title: TEMPLATE_BUTTON_LABELS.TAKEN },
-    { id: `evt:${reminderEventId}:NOT_YET`, title: TEMPLATE_BUTTON_LABELS.NOT_YET },
-    { id: `evt:${reminderEventId}:PROBLEM`, title: TEMPLATE_BUTTON_LABELS.PROBLEM },
+    { id: `evt:${reminderEventId}:TAKEN`, title: TEMPLATE_V2_BUTTON_LABELS.TAKEN },
+    { id: `evt:${reminderEventId}:NOT_YET`, title: TEMPLATE_V2_BUTTON_LABELS.NOT_YET },
+    { id: `evt:${reminderEventId}:PROBLEM`, title: TEMPLATE_V2_BUTTON_LABELS.PROBLEM },
   ];
 }
 
@@ -96,49 +107,39 @@ export function refinementMenu(reminderEventId: string) {
 
   return {
     taken: {
-      bodyText: "تمام 🌿 خدت الدواء في المعاد ولا متأخر؟",
+      bodyText: "تم تسجيل الجرعة 🌿 هل تناولت الدواء في الموعد أم متأخراً؟",
       buttons: [
-        { id: id("TAKEN"), title: "في المعاد ✅" },
-        { id: id("TAKEN_LATE"), title: "متأخر شوية 🟡" },
+        { id: id("TAKEN"), title: "في الموعد ✅" },
+        { id: id("TAKEN_LATE"), title: "متأخراً قليلاً 🟡" },
       ],
     },
     notYet: {
-      bodyText: "مفيش مشكلة. تحب نعمل إيه؟",
+      bodyText: "لا بأس. كيف تود المتابعة؟",
       buttons: [
-        { id: id("REMIND_LATER_15"), title: "فكّرني بعد ١٥ د" },
-        { id: id("REMIND_LATER_60"), title: "فكّرني بعد ساعة" },
-        { id: id("MISSED"), title: "فوّتت الجرعة ❌" },
+        { id: id("REMIND_LATER_15"), title: "تذكير بعد ١٥ د" },
+        { id: id("REMIND_LATER_60"), title: "تذكير بعد ساعة" },
+        { id: id("MISSED"), title: "فاتتني الجرعة ❌" },
       ],
     },
     problem: {
-      bodyText: "معلش، قولي إيه المشكلة؟",
+      bodyText: "نعتذر عن ذلك، يرجى تحديد طبيعة المشكلة:",
       // EXACTLY THREE. Meta rejects an interactive message carrying more than
       // three reply buttons with a non-retryable 4xx, so a fourth button here
       // means the message never reaches the patient at all.
-      //
-      // The three kept are the ones that need to be RECORDED as a category for
-      // reporting: a side effect, an availability problem, and a dosing
-      // misunderstanding. "I want to speak to the pharmacist" is not a category
-      // — it is a request for contact, and it is offered on the acknowledgement
-      // that follows, where it applies to every branch.
       buttons: [
         { id: id("PROBLEM_SIDE_EFFECT"), title: "عرض جانبي" },
-        { id: id("PROBLEM_UNAVAILABLE"), title: "الدواء مش متوفر" },
-        { id: id("PROBLEM_CONFUSED"), title: "مش فاهم الجرعة" },
+        { id: id("PROBLEM_UNAVAILABLE"), title: "الدواء غير متوفر" },
+        { id: id("PROBLEM_CONFUSED"), title: "استفسار عن الجرعة" },
       ],
     },
     /**
      * Sent after the patient picks a problem category.
-     *
-     * This is where "عايز أكلم الصيدلي" lives, because it is a request rather
-     * than a classification. Putting it here means it is reachable from every
-     * problem branch without spending one of the three category slots on it.
      */
     problemAck: {
-      bodyText: "شكرًا إنك قلت لنا 🌿 سجّلنا المشكلة وهيتواصل معاك الصيدلي.",
+      bodyText: "شكراً لإبلاغنا 🌿 تم تسجيل المشكلة وسيتواصل معكم الصيدلي قريباً لمتابعة الأمر.",
       buttons: [
-        { id: id("PROBLEM_WANTS_CALL"), title: "عايز أكلم الصيدلي" },
-        { id: id("ACK"), title: "تمام، شكرًا" },
+        { id: id("PROBLEM_WANTS_CALL"), title: "أود التحدث مع الصيدلي" },
+        { id: id("ACK"), title: "تمام، شكراً" },
       ],
     },
   };
@@ -254,17 +255,29 @@ export function answerFromButtonLabel(
 
   const answers: Record<string, ResponseState> = {
     [normalizeLabel(TEMPLATE_BUTTON_LABELS.TAKEN)]: "TAKEN" as ResponseState,
+    [normalizeLabel(TEMPLATE_V1_BUTTON_LABELS.TAKEN)]: "TAKEN" as ResponseState,
     [normalizeLabel(TEMPLATE_BUTTON_LABELS.PROBLEM)]: "PROBLEM" as ResponseState,
+    [normalizeLabel(TEMPLATE_V1_BUTTON_LABELS.PROBLEM)]: "PROBLEM" as ResponseState,
     [normalizeLabel("في المعاد ✅")]: "TAKEN" as ResponseState,
+    [normalizeLabel("في الموعد ✅")]: "TAKEN" as ResponseState,
     [normalizeLabel("متأخر شوية 🟡")]: "TAKEN_LATE" as ResponseState,
+    [normalizeLabel("متأخراً قليلاً 🟡")]: "TAKEN_LATE" as ResponseState,
     [normalizeLabel("فوّتت الجرعة ❌")]: "MISSED" as ResponseState,
+    [normalizeLabel("فاتتني الجرعة ❌")]: "MISSED" as ResponseState,
+    [normalizeLabel("لم أتناول الجرعة ❌")]: "MISSED" as ResponseState,
     [normalizeLabel("عرض جانبي")]: "PROBLEM" as ResponseState,
     [normalizeLabel("الدواء مش متوفر")]: "PROBLEM" as ResponseState,
+    [normalizeLabel("الدواء غير متوفر")]: "PROBLEM" as ResponseState,
     [normalizeLabel("مش فاهم الجرعة")]: "PROBLEM" as ResponseState,
+    [normalizeLabel("استفسار عن الجرعة")]: "PROBLEM" as ResponseState,
     [normalizeLabel("عايز أكلم الصيدلي")]: "PROBLEM" as ResponseState,
+    [normalizeLabel("أود التحدث مع الصيدلي")]: "PROBLEM" as ResponseState,
+    [normalizeLabel("أرغب بالتحدث مع الصيدلي")]: "PROBLEM" as ResponseState,
+    [normalizeLabel("طلب التحدث مع الصيدلي")]: "PROBLEM" as ResponseState,
   };
 
-  if (normalizeLabel(TEMPLATE_BUTTON_LABELS.NOT_YET) === key) {
+  if (normalizeLabel(TEMPLATE_BUTTON_LABELS.NOT_YET) === key ||
+      normalizeLabel(TEMPLATE_V2_BUTTON_LABELS.NOT_YET) === key) {
     return {
       reminderEventId: "",
       answer: null,
@@ -285,9 +298,9 @@ export function answerFromButtonLabel(
     };
   }
 
-  const snoozeMatch = /^فكرني بعد (\d+)/.exec(key);
+  const snoozeMatch = /^(?:فكرني|تذكير) بعد (\d+)/.exec(key);
   if (snoozeMatch) {
-    // "فكّرني بعد ١٥ د" / "فكّرني بعد ساعة" — durations are also encoded in our
+    // "تذكير بعد ١٥ د" / "فكّرني بعد ١٥ د" / "تذكير بعد ساعة" — durations are also encoded in our
     // own payload path, this covers the label path only.
     const n = Number(snoozeMatch[1]);
     return {
@@ -297,7 +310,7 @@ export function answerFromButtonLabel(
       isProblemCategory: false,
     };
   }
-  if (key.includes("فكرني بعد ساعه")) {
+  if (key.includes("فكرني بعد ساعه") || key.includes("تذكير بعد ساعه")) {
     return {
       reminderEventId: "",
       answer: "REMIND_LATER" as ResponseState,

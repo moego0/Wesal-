@@ -217,34 +217,85 @@ export async function sweepRefills(now: Date = new Date()): Promise<{
       }
 
       // ── 3. Patient WhatsApp Refill Reminder ──
-      // Send reminder when medication is approaching depletion (daysRemaining <= leadDays)
+      // Send reminder when medication is approaching depletion:
+      // First reminder: 5 days prior (daysRemaining <= 5 && daysRemaining > 1)
+      // Second reminder: 1 day prior (daysRemaining <= 1 && daysRemaining >= 0)
       const consent = refill.patient.consents[0];
       const hasConsent = Boolean(consent?.granted && !consent.revokedAt);
       const notOptedOut = !refill.patient.messagingOptOutAt;
 
-      if (daysRemaining <= leadDays && daysRemaining >= 0 && !refill.patientRemindedAtUtc && hasConsent && notOptedOut) {
-        const isAr = refill.patient.preferredLocale === "AR_EG";
+      const isFiveDayWindow = daysRemaining <= 5 && daysRemaining > 1 && !refill.patientRemindedAtUtc;
+      const isOneDayWindow =
+        daysRemaining <= 1 &&
+        daysRemaining >= 0 &&
+        (!refill.remindedAtUtc || now.getTime() - refill.remindedAtUtc.getTime() > 20 * 3600_000);
+
+      if ((isFiveDayWindow || isOneDayWindow) && hasConsent && notOptedOut) {
         const patName = refill.patient.fullName;
         const medName = refill.medication.medicationNameText;
+        const pharmacyName = pharmacy.name;
 
-        const bodyText = isAr
-          ? `مرحباً ${patName}،\n\nمن المتوقع نفاد عبوة دواء ${medName} خلال حوالي ${daysRemaining} أيام.\n\nيرجى التواصل مع الصيدلية لترتيب موعد صرف العبوة القادمة لضمان استمرار علاجك دون انقطاع.\n\n— وِصال`
-          : `Hello ${patName},\n\nYour ${medName} package is expected to run out in approximately ${daysRemaining} days.\n\nPlease contact your pharmacy to arrange your next refill so your treatment continues without interruption.\n\n— Wessal`;
+        // Format treatment duration text
+        const durationVal = refill.medication.treatmentDurationValue;
+        const durationUnit = refill.medication.treatmentDurationUnit;
+        let durationText = "";
+        if (durationVal && durationUnit) {
+          if (durationUnit === "MONTHS") {
+            durationText = durationVal === 1 ? "شهر واحد" : durationVal === 2 ? "شهران" : `${durationVal} أشهر`;
+          } else if (durationUnit === "DAYS") {
+            durationText = `${durationVal} يوماً`;
+          } else if (durationUnit === "WEEKS") {
+            durationText = `${durationVal} أسابيع`;
+          } else {
+            durationText = `${durationVal} ${durationUnit}`;
+          }
+        } else if (refill.daysSupply) {
+          durationText = `${refill.daysSupply} يوماً`;
+        } else {
+          durationText = "المدة المحددة بالعلاج";
+        }
+
+        const bodyText =
+          `السيد/ السيدة : ${patName}\n\n` +
+          `تذكّركم صيدلية ${pharmacyName} عبر وِصال باقتراب موعد انتهاء عبوة ${medName}، وفقًا لمدة العلاج المسجّلة لديكم (${durationText}).\n\n` +
+          `يسعدنا استقبالكم بالصيدلية لتوفير عبوتكم التالية، بعد التأكد من موعد إعادة الصرف المناسب لكم. \n\n` +
+          `يرجى اختيار أحد الخيارات التالية:\n\n` +
+          `مع أطيب تمنيات صيدلية ${pharmacyName} وفريق وِصال لكم بالشفاء ودوام الصحة والعافية.`;
+
+        const buttons = [
+          { id: `refill:${refill.id}:PICKUP`, title: "هاجي أستلم العبوة" },
+          { id: `refill:${refill.id}:SNOOZE`, title: "🔔 ذكّرني غدًا" },
+        ];
 
         try {
-          const sendResult = await messaging.sendText({
+          // Attempt interactive message with quick-reply buttons first
+          let sendResult = await messaging.sendInteractive({
             to: refill.patient.phoneE164,
             bodyText,
-            callbackData: `refill_${refill.id}`,
+            buttons,
+            callbackData: `refill_${refill.id}_c${refill.cycleNumber}`,
             correlationId: `refill_${refill.id}_${refill.cycleNumber}`,
           });
+
+          // Fallback to text if interactive is not supported outside session window
+          if (!sendResult.ok) {
+            const fallbackText =
+              bodyText +
+              `\n\nخيارات الرد:\n1 - هاجي أستلم العبوة\n2 - ذكّرني غداً`;
+            sendResult = await messaging.sendText({
+              to: refill.patient.phoneE164,
+              bodyText: fallbackText,
+              callbackData: `refill_${refill.id}_c${refill.cycleNumber}`,
+              correlationId: `refill_${refill.id}_${refill.cycleNumber}`,
+            });
+          }
 
           if (sendResult.ok) {
             patientRemindersSent++;
             await systemPrisma.refillRecord.update({
               where: { id: refill.id },
               data: {
-                patientRemindedAtUtc: now,
+                patientRemindedAtUtc: refill.patientRemindedAtUtc ?? now,
                 remindedAtUtc: now,
               },
             });

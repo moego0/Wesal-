@@ -179,6 +179,16 @@ async function PatientRecord({
               items={[
                 { term: t("phone"), detail: <span dir="ltr">{patient.phoneE164}</span> },
                 {
+                  term: locale === "ar" ? "الصيدلي المسؤول / المتابع" : "Assigned Pharmacist",
+                  detail: patient.assignedPharmacistName ? (
+                    <span className="font-medium text-teal-800 dark:text-teal-300">
+                      {patient.assignedPharmacistName}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  ),
+                },
+                {
                   term: t("enrolledAt"),
                   detail: formatDate(locale, patient.createdAt),
                 },

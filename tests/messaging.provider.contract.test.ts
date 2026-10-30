@@ -203,7 +203,7 @@ const CLOUD_HARNESS: Harness = {
           timestamp: "1773417600",
           type: "interactive",
           context: { id },
-          interactive: { type: "button_reply", button_reply: { id: "evt:clxevent001:TAKEN", title: "خدته ✅" } },
+          interactive: { type: "button_reply", button_reply: { id: "evt:clxevent001:TAKEN", title: TEMPLATE_BUTTON_LABELS.TAKEN } },
         },
       ],
     }),
