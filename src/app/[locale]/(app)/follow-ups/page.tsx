@@ -24,6 +24,21 @@ export default async function FollowUpsPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { locale } = await params;
+
+  return (
+    <Suspense fallback={<SkeletonRows rows={6} />}>
+      <FollowUpContent locale={locale} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function FollowUpContent({
+  locale,
+  searchParams,
+}: {
+  locale: string;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const { tab = "problems" } = await searchParams;
   const isAr = locale === "ar";
 
