@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { DrugNameCombobox } from "@/components/drug-name-combobox";
+import { MedicationPreflightCheck } from "@/components/ddi/MedicationPreflightCheck";
 import {
   Card,
   CardBody,
@@ -110,6 +111,7 @@ export function MedicationForm({
   today,
   medication,
   schedule,
+  existingMedications = [],
 }: {
   locale: string;
   patientId: string;
@@ -122,6 +124,8 @@ export function MedicationForm({
   medication: MedicationFormRecord | null;
   /** null when adding, or when the medication has no schedule yet. */
   schedule: ScheduleFormRecord | null;
+  /** Existing active medications for live DDI pre-flight conflict detection. */
+  existingMedications?: Array<{ id: string; name: string }>;
 }) {
   const t = useTranslations("medications");
   /*
@@ -166,6 +170,7 @@ export function MedicationForm({
    * re-validates it anyway: this input is postable by hand.
    */
   const [code, setCode] = useState(medication?.medicationCode ?? "");
+  const [currentDrugName, setCurrentDrugName] = useState(() => medication?.name ?? "");
 
   const [unitsPerPackage, setUnitsPerPackage] = useState(
     () => medication?.unitsPerPackage?.toString() ?? "30",
@@ -201,6 +206,7 @@ export function MedicationForm({
     if (state.values.mode === "PRN" || state.values.mode === "FIXED_TIMES_OF_DAY") {
       setMode(state.values.mode);
     }
+    if (state.values.name) setCurrentDrugName(state.values.name);
     if (state.values.unitsPerPackage) setUnitsPerPackage(state.values.unitsPerPackage);
     if (state.values.unitsPerDose) setUnitsPerDose(state.values.unitsPerDose);
     if (state.values.dosesPerDay) setDosesPerDay(state.values.dosesPerDay);
@@ -299,6 +305,7 @@ export function MedicationForm({
                   defaultValue={value("name", medication?.name ?? "")}
                   required
                   onCodeChange={setCode}
+                  onNameChange={setCurrentDrugName}
                 />
               </Field>
 
@@ -308,6 +315,13 @@ export function MedicationForm({
               <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 {tPicker("attribution")}
               </p>
+
+              {/* Live pre-flight DDI conflict warning with "How to Solve It" */}
+              <MedicationPreflightCheck
+                currentName={currentDrugName}
+                existingMedications={existingMedications}
+                locale={locale}
+              />
             </div>
 
             {/* The RxCUI belonging to the name above, or empty. Invisible, so

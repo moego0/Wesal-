@@ -51,6 +51,7 @@ export function DrugNameCombobox({
   required,
   maxLength = 160,
   onCodeChange,
+  onNameChange,
 }: {
   id: string;
   name?: string;
@@ -59,6 +60,8 @@ export function DrugNameCombobox({
   maxLength?: number;
   /** Called with an RxCUI on selection, and with "" whenever the name changes. */
   onCodeChange: (code: string) => void;
+  /** Optional callback fired when the user selects or edits the drug name. */
+  onNameChange?: (name: string) => void;
 }) {
   const t = useTranslations("drugPicker");
 
@@ -166,6 +169,7 @@ export function DrugNameCombobox({
   function handleChange(value: string) {
     setSearch(value);
     onCodeChange("");
+    onNameChange?.(value);
     seqRef.current += 1;
     setPhase("idle");
 
@@ -184,6 +188,7 @@ export function DrugNameCombobox({
     // Written to the DOM node, not to state: the input stays uncontrolled so
     // the form's own echo-and-reset behaviour keeps working. See note 1 above.
     if (inputRef.current) inputRef.current.value = choice.name;
+    onNameChange?.(choice.name);
 
     // Cleared so the debounce does not re-search what was just selected.
     setSearch("");

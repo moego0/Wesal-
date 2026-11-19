@@ -82,6 +82,10 @@ async function AddMedication({
         today={today}
         medication={null}
         schedule={null}
+        existingMedications={patient.medications.map((m) => ({
+          id: m.id,
+          name: m.medicationNameText,
+        }))}
       />
     </>
   );

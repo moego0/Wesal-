@@ -32,6 +32,10 @@ export async function getMedicationDetail(pharmacyId: string, medicationId: stri
           phoneE164: true,
           timeZone: true,
           preferredLocale: true,
+          medications: {
+            where: { status: "ACTIVE" },
+            select: { id: true, medicationNameText: true },
+          },
         },
       },
       schedules: {
@@ -74,7 +78,16 @@ export async function getMedicationDetail(pharmacyId: string, medicationId: stri
 export async function getPatientForMedication(pharmacyId: string, patientId: string) {
   return prisma.patient.findFirst({
     where: { id: patientId, pharmacyId },
-    select: { id: true, fullName: true, timeZone: true, preferredLocale: true },
+    select: {
+      id: true,
+      fullName: true,
+      timeZone: true,
+      preferredLocale: true,
+      medications: {
+        where: { status: "ACTIVE" },
+        select: { id: true, medicationNameText: true },
+      },
+    },
   });
 }
 

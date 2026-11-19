@@ -28,6 +28,9 @@ import {
   buttonClass,
 } from "@/components/ui";
 import { DeleteMedicationButton } from "@/components/medications/DeleteMedicationButton";
+import { PatientMedicationInteractions } from "@/components/ddi/PatientMedicationInteractions";
+import { MedicationInteractionBadge } from "@/components/ddi/MedicationInteractionBadge";
+import { evaluateMedicationInteractions } from "@/server/ddi/engine";
 import { requireSessionUser } from "@/server/auth/current-user";
 import { hasPermission } from "@/server/auth/rbac";
 import {
@@ -114,6 +117,18 @@ async function PatientRecord({
 
   const activeMedications = patient.medications.filter((m) => m.status === "ACTIVE");
 
+  const ddiReport =
+    activeMedications.length >= 2
+      ? await evaluateMedicationInteractions(
+          activeMedications.map((m) => ({
+            identifier: m.id,
+            name: m.medicationNameText,
+            doseAmount: m.doseAmountText || undefined,
+            instructions: (locale === "ar" ? m.instructionsTextAr : m.instructionsTextEn) || undefined,
+          })),
+        )
+      : null;
+
   /*
    * Both permissions, because a medication and its schedule are written in one
    * transaction by one action. A role holding only `medication:write` would be
@@ -168,7 +183,22 @@ async function PatientRecord({
         />
         <StatBlock label={t("medications")} value={activeMedications.length} />
         <StatBlock label={t("cases")} value={openCases.length} />
-        <StatBlock label={tEnums("severity.URGENT")} value={alerts.length} />
+        <StatBlock
+          label={tEnums("severity.URGENT")}
+          value={alerts.length + (ddiReport?.interactionsBySeverity.major ?? 0)}
+          tone={
+            alerts.length > 0 || (ddiReport?.interactionsBySeverity.major ?? 0) > 0
+              ? "attention"
+              : "neutral"
+          }
+          hint={
+            ddiReport && ddiReport.interactionsBySeverity.major > 0
+              ? locale === "ar"
+                ? "تفاعل دوائي حرج يتطلب تدخلاً"
+                : "Major DDI conflict active"
+              : undefined
+          }
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -268,6 +298,14 @@ async function PatientRecord({
         </Card>
       ) : null}
 
+      {/* ──────────────── Drug-Drug Interactions (DDI) & Actionable Resolutions ──────────────── */}
+      <PatientMedicationInteractions
+        report={ddiReport}
+        patientId={patient.id}
+        patientName={patient.fullName}
+        locale={locale}
+      />
+
       <Card>
         <CardHeader
           title={t("medications")}
@@ -301,14 +339,25 @@ async function PatientRecord({
                 className="rounded-xl border border-slate-200 p-4 dark:border-slate-800"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="font-medium text-slate-900 dark:text-slate-50">
-                    {medication.medicationNameText}
-                    {medication.doseAmountText ? (
-                      <span className="ms-2 text-sm font-normal text-slate-500 dark:text-slate-400">
-                        {medication.doseAmountText}
-                      </span>
-                    ) : null}
-                  </p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-900 dark:text-slate-50">
+                        {medication.medicationNameText}
+                        {medication.doseAmountText ? (
+                          <span className="ms-2 text-sm font-normal text-slate-500 dark:text-slate-400">
+                            {medication.doseAmountText}
+                          </span>
+                        ) : null}
+                      </p>
+                      {ddiReport && (
+                        <MedicationInteractionBadge
+                          medicationName={medication.medicationNameText}
+                          interactions={ddiReport.interactions}
+                          locale={locale}
+                        />
+                      )}
+                    </div>
+                  </div>
 
                   {canManageMedications ? (
                     <div className="flex items-center gap-1.5">
@@ -491,13 +540,35 @@ async function PatientRecord({
   );
 }
 
-function StatBlock({ label, value }: { label: string; value: React.ReactNode }) {
+function StatBlock({
+  label,
+  value,
+  tone = "neutral",
+  hint,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: "neutral" | "attention" | "good";
+  hint?: React.ReactNode;
+}) {
+  const accent =
+    tone === "attention"
+      ? "text-rose-600 dark:text-rose-400"
+      : tone === "good"
+        ? "text-teal-600 dark:text-teal-400"
+        : "text-slate-900 dark:text-slate-50";
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <div
+      className={`rounded-2xl border p-4 transition-all ${
+        tone === "attention"
+          ? "border-rose-200 bg-rose-50/50 dark:border-rose-900/50 dark:bg-rose-950/30"
+          : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+      }`}
+    >
       <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
-      <p className="mt-1.5 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
-        {value}
-      </p>
+      <p className={`mt-1.5 text-2xl font-semibold tabular-nums ${accent}`}>{value}</p>
+      {hint ? <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">{hint}</p> : null}
     </div>
   );
 }

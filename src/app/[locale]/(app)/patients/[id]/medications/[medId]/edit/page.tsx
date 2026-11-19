@@ -130,6 +130,9 @@ async function EditMedication({
         today={today}
         medication={record}
         schedule={scheduleRecord}
+        existingMedications={medication.patient.medications
+          .filter((m) => m.id !== medication.id)
+          .map((m) => ({ id: m.id, name: m.medicationNameText }))}
       />
 
       <Card>
