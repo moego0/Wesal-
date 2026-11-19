@@ -344,3 +344,42 @@ export const MessageIntent = {
 } as const
 
 export type MessageIntent = (typeof MessageIntent)[keyof typeof MessageIntent]
+
+
+export const SourceVerificationState = {
+  IMPORTED_UNVERIFIED: 'IMPORTED_UNVERIFIED',
+  CROSS_SOURCE_MATCHED: 'CROSS_SOURCE_MATCHED',
+  MANUALLY_VERIFIED: 'MANUALLY_VERIFIED'
+} as const
+
+export type SourceVerificationState = (typeof SourceVerificationState)[keyof typeof SourceVerificationState]
+
+
+export const DdiSeverity = {
+  MAJOR: 'MAJOR',
+  MODERATE: 'MODERATE',
+  MINOR: 'MINOR',
+  UNKNOWN: 'UNKNOWN'
+} as const
+
+export type DdiSeverity = (typeof DdiSeverity)[keyof typeof DdiSeverity]
+
+
+export const DdiApprovalState = {
+  IMPORTED_UNREVIEWED: 'IMPORTED_UNREVIEWED',
+  CLINICALLY_APPROVED: 'CLINICALLY_APPROVED',
+  REJECTED: 'REJECTED',
+  FLAGGED_FOR_REVIEW: 'FLAGGED_FOR_REVIEW'
+} as const
+
+export type DdiApprovalState = (typeof DdiApprovalState)[keyof typeof DdiApprovalState]
+
+
+export const DdiReviewDecision = {
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  MODIFIED: 'MODIFIED',
+  NEEDS_MORE_EVIDENCE: 'NEEDS_MORE_EVIDENCE'
+} as const
+
+export type DdiReviewDecision = (typeof DdiReviewDecision)[keyof typeof DdiReviewDecision]

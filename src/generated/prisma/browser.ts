@@ -157,3 +157,58 @@ export type OutboxEvent = Prisma.OutboxEventModel
  * nothing logged.
  */
 export type SweepHeartbeat = Prisma.SweepHeartbeatModel
+/**
+ * Model DrugCatalogSource
+ * 
+ */
+export type DrugCatalogSource = Prisma.DrugCatalogSourceModel
+/**
+ * Model DrugCatalogImport
+ * 
+ */
+export type DrugCatalogImport = Prisma.DrugCatalogImportModel
+/**
+ * Model Ingredient
+ * 
+ */
+export type Ingredient = Prisma.IngredientModel
+/**
+ * Model DrugProduct
+ * 
+ */
+export type DrugProduct = Prisma.DrugProductModel
+/**
+ * Model ProductIngredient
+ * 
+ */
+export type ProductIngredient = Prisma.ProductIngredientModel
+/**
+ * Model DrugProductIdentifier
+ * 
+ */
+export type DrugProductIdentifier = Prisma.DrugProductIdentifierModel
+/**
+ * Model DrugProductSourceRecord
+ * 
+ */
+export type DrugProductSourceRecord = Prisma.DrugProductSourceRecordModel
+/**
+ * Model DdiInteraction
+ * 
+ */
+export type DdiInteraction = Prisma.DdiInteractionModel
+/**
+ * Model DdiReview
+ * 
+ */
+export type DdiReview = Prisma.DdiReviewModel
+/**
+ * Model DdiTimingRule
+ * 
+ */
+export type DdiTimingRule = Prisma.DdiTimingRuleModel
+/**
+ * Model DdiUnmatchedRecord
+ * 
+ */
+export type DdiUnmatchedRecord = Prisma.DdiUnmatchedRecordModel

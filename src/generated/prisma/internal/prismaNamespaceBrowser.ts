@@ -75,7 +75,18 @@ export const ModelName = {
   WhatsAppTemplate: 'WhatsAppTemplate',
   AuditEvent: 'AuditEvent',
   OutboxEvent: 'OutboxEvent',
-  SweepHeartbeat: 'SweepHeartbeat'
+  SweepHeartbeat: 'SweepHeartbeat',
+  DrugCatalogSource: 'DrugCatalogSource',
+  DrugCatalogImport: 'DrugCatalogImport',
+  Ingredient: 'Ingredient',
+  DrugProduct: 'DrugProduct',
+  ProductIngredient: 'ProductIngredient',
+  DrugProductIdentifier: 'DrugProductIdentifier',
+  DrugProductSourceRecord: 'DrugProductSourceRecord',
+  DdiInteraction: 'DdiInteraction',
+  DdiReview: 'DdiReview',
+  DdiTimingRule: 'DdiTimingRule',
+  DdiUnmatchedRecord: 'DdiUnmatchedRecord'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -628,6 +639,208 @@ export const SweepHeartbeatScalarFieldEnum = {
 } as const
 
 export type SweepHeartbeatScalarFieldEnum = (typeof SweepHeartbeatScalarFieldEnum)[keyof typeof SweepHeartbeatScalarFieldEnum]
+
+
+export const DrugCatalogSourceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  displayName: 'displayName',
+  sourceUrl: 'sourceUrl',
+  license: 'license',
+  licenseUrl: 'licenseUrl',
+  attribution: 'attribution',
+  jurisdiction: 'jurisdiction',
+  version: 'version',
+  description: 'description',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DrugCatalogSourceScalarFieldEnum = (typeof DrugCatalogSourceScalarFieldEnum)[keyof typeof DrugCatalogSourceScalarFieldEnum]
+
+
+export const DrugCatalogImportScalarFieldEnum = {
+  id: 'id',
+  sourceId: 'sourceId',
+  importedAt: 'importedAt',
+  status: 'status',
+  totalRecords: 'totalRecords',
+  insertedRecords: 'insertedRecords',
+  updatedRecords: 'updatedRecords',
+  duplicateRecords: 'duplicateRecords',
+  invalidRecords: 'invalidRecords',
+  unmatchedIngredients: 'unmatchedIngredients',
+  missingStrengths: 'missingStrengths',
+  sourceVersion: 'sourceVersion',
+  checksum: 'checksum',
+  logDetails: 'logDetails',
+  errorMessage: 'errorMessage'
+} as const
+
+export type DrugCatalogImportScalarFieldEnum = (typeof DrugCatalogImportScalarFieldEnum)[keyof typeof DrugCatalogImportScalarFieldEnum]
+
+
+export const IngredientScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  nameAr: 'nameAr',
+  synonyms: 'synonyms',
+  rxcui: 'rxcui',
+  pubchemCid: 'pubchemCid',
+  inchiKey: 'inchiKey',
+  atcCode: 'atcCode',
+  description: 'description',
+  source: 'source',
+  verificationState: 'verificationState',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type IngredientScalarFieldEnum = (typeof IngredientScalarFieldEnum)[keyof typeof IngredientScalarFieldEnum]
+
+
+export const DrugProductScalarFieldEnum = {
+  id: 'id',
+  sourceId: 'sourceId',
+  country: 'country',
+  brandName: 'brandName',
+  brandNameAr: 'brandNameAr',
+  genericName: 'genericName',
+  manufacturer: 'manufacturer',
+  strength: 'strength',
+  dosageForm: 'dosageForm',
+  route: 'route',
+  registrationNumber: 'registrationNumber',
+  verificationState: 'verificationState',
+  verifiedByUserId: 'verifiedByUserId',
+  verifiedAt: 'verifiedAt',
+  price: 'price',
+  currency: 'currency',
+  units: 'units',
+  category: 'category',
+  indications: 'indications',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DrugProductScalarFieldEnum = (typeof DrugProductScalarFieldEnum)[keyof typeof DrugProductScalarFieldEnum]
+
+
+export const ProductIngredientScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  ingredientId: 'ingredientId',
+  strength: 'strength',
+  strengthNumerator: 'strengthNumerator',
+  strengthNumeratorUnit: 'strengthNumeratorUnit',
+  strengthDenominator: 'strengthDenominator',
+  strengthDenominatorUnit: 'strengthDenominatorUnit',
+  isPrimary: 'isPrimary',
+  orderIndex: 'orderIndex'
+} as const
+
+export type ProductIngredientScalarFieldEnum = (typeof ProductIngredientScalarFieldEnum)[keyof typeof ProductIngredientScalarFieldEnum]
+
+
+export const DrugProductIdentifierScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  idType: 'idType',
+  identifier: 'identifier',
+  isValid: 'isValid',
+  issuer: 'issuer'
+} as const
+
+export type DrugProductIdentifierScalarFieldEnum = (typeof DrugProductIdentifierScalarFieldEnum)[keyof typeof DrugProductIdentifierScalarFieldEnum]
+
+
+export const DrugProductSourceRecordScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  sourceId: 'sourceId',
+  importId: 'importId',
+  sourceExternalId: 'sourceExternalId',
+  rawPayload: 'rawPayload',
+  license: 'license',
+  retrievedAt: 'retrievedAt',
+  recordChecksum: 'recordChecksum'
+} as const
+
+export type DrugProductSourceRecordScalarFieldEnum = (typeof DrugProductSourceRecordScalarFieldEnum)[keyof typeof DrugProductSourceRecordScalarFieldEnum]
+
+
+export const DdiInteractionScalarFieldEnum = {
+  id: 'id',
+  ingredientAId: 'ingredientAId',
+  ingredientBId: 'ingredientBId',
+  sourceDrugAId: 'sourceDrugAId',
+  sourceDrugBId: 'sourceDrugBId',
+  sourceDrugAName: 'sourceDrugAName',
+  sourceDrugBName: 'sourceDrugBName',
+  severity: 'severity',
+  description: 'description',
+  mechanism: 'mechanism',
+  management: 'management',
+  source: 'source',
+  license: 'license',
+  reference: 'reference',
+  clinicalApprovalState: 'clinicalApprovalState',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DdiInteractionScalarFieldEnum = (typeof DdiInteractionScalarFieldEnum)[keyof typeof DdiInteractionScalarFieldEnum]
+
+
+export const DdiReviewScalarFieldEnum = {
+  id: 'id',
+  interactionId: 'interactionId',
+  reviewerUserId: 'reviewerUserId',
+  reviewerRole: 'reviewerRole',
+  decision: 'decision',
+  adjustedSeverity: 'adjustedSeverity',
+  adjustedManagement: 'adjustedManagement',
+  clinicalNotes: 'clinicalNotes',
+  reviewedAt: 'reviewedAt'
+} as const
+
+export type DdiReviewScalarFieldEnum = (typeof DdiReviewScalarFieldEnum)[keyof typeof DdiReviewScalarFieldEnum]
+
+
+export const DdiTimingRuleScalarFieldEnum = {
+  id: 'id',
+  ingredientAId: 'ingredientAId',
+  ingredientBId: 'ingredientBId',
+  minIntervalHours: 'minIntervalHours',
+  timingInstructionAr: 'timingInstructionAr',
+  timingInstructionEn: 'timingInstructionEn',
+  clinicalReference: 'clinicalReference',
+  isApproved: 'isApproved',
+  approvedByUserId: 'approvedByUserId',
+  approvedAt: 'approvedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DdiTimingRuleScalarFieldEnum = (typeof DdiTimingRuleScalarFieldEnum)[keyof typeof DdiTimingRuleScalarFieldEnum]
+
+
+export const DdiUnmatchedRecordScalarFieldEnum = {
+  id: 'id',
+  source: 'source',
+  sourceDrugAId: 'sourceDrugAId',
+  sourceDrugAName: 'sourceDrugAName',
+  sourceDrugBId: 'sourceDrugBId',
+  sourceDrugBName: 'sourceDrugBName',
+  severity: 'severity',
+  reason: 'reason',
+  rawRecord: 'rawRecord',
+  createdAt: 'createdAt'
+} as const
+
+export type DdiUnmatchedRecordScalarFieldEnum = (typeof DdiUnmatchedRecordScalarFieldEnum)[keyof typeof DdiUnmatchedRecordScalarFieldEnum]
 
 
 export const SortOrder = {

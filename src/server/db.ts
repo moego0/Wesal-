@@ -2,11 +2,26 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import { env } from "./env";
 
+function getDatabaseUrl(): string {
+  const raw = env().DATABASE_URL;
+  try {
+    const u = new URL(raw);
+    if (!u.hostname.includes(".") && u.hostname.startsWith("dpg-") && process.env.NODE_ENV !== "production") {
+      u.hostname = `${u.hostname}.oregon-postgres.render.com`;
+      if (!u.searchParams.has("sslmode")) {
+        u.searchParams.set("sslmode", "require");
+      }
+      return u.toString();
+    }
+  } catch {}
+  return raw;
+}
+
 /**
  * Prisma 7 gets its connection from a driver adapter rather than the schema.
  */
 function buildClient() {
-  const adapter = new PrismaPg({ connectionString: env().DATABASE_URL });
+  const adapter = new PrismaPg({ connectionString: getDatabaseUrl() });
 
   return new PrismaClient({
     adapter,

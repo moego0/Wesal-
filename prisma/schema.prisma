@@ -1053,3 +1053,271 @@ model SweepHeartbeat {
   hostId         String
   lastError      String?
 }
+
+// ──────────────────── clinical catalog & normalization ────────────────────
+
+enum SourceVerificationState {
+  IMPORTED_UNVERIFIED
+  CROSS_SOURCE_MATCHED
+  MANUALLY_VERIFIED
+}
+
+model DrugCatalogSource {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  displayName String
+  sourceUrl   String
+  license     String
+  licenseUrl  String?
+  attribution String
+  jurisdiction String?
+  version     String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  imports       DrugCatalogImport[]
+  products      DrugProduct[]
+  sourceRecords DrugProductSourceRecord[]
+
+  @@index([name])
+}
+
+model DrugCatalogImport {
+  id                  String   @id @default(cuid())
+  sourceId            String
+  source              DrugCatalogSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  importedAt          DateTime @default(now())
+  status              String   @default("COMPLETED")
+  totalRecords        Int      @default(0)
+  insertedRecords     Int      @default(0)
+  updatedRecords      Int      @default(0)
+  duplicateRecords    Int      @default(0)
+  invalidRecords      Int      @default(0)
+  unmatchedIngredients Int     @default(0)
+  missingStrengths    Int      @default(0)
+  sourceVersion       String?
+  checksum            String?
+  logDetails          Json?
+  errorMessage        String?
+
+  @@index([sourceId, importedAt])
+}
+
+model Ingredient {
+  id                String                  @id @default(cuid())
+  name              String                  @unique
+  nameAr            String?
+  synonyms          String[]
+  rxcui             String?
+  pubchemCid        String?
+  inchiKey          String?
+  atcCode           String?
+  description       String?
+  source            String                  @default("manual")
+  verificationState SourceVerificationState @default(IMPORTED_UNVERIFIED)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  productIngredients ProductIngredient[]
+  ddiInteractionsA   DdiInteraction[] @relation("DdiIngredientA")
+  ddiInteractionsB   DdiInteraction[] @relation("DdiIngredientB")
+  timingRulesA       DdiTimingRule[]  @relation("TimingRuleIngredientA")
+  timingRulesB       DdiTimingRule[]  @relation("TimingRuleIngredientB")
+
+  @@index([rxcui])
+  @@index([pubchemCid])
+  @@index([atcCode])
+}
+
+model DrugProduct {
+  id                 String                  @id @default(cuid())
+  sourceId           String
+  source             DrugCatalogSource       @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  country            String                  // ISO-3166-1 alpha-2, e.g. "EG", "US"
+  brandName          String
+  brandNameAr        String?
+  genericName        String?
+  manufacturer       String?
+  strength           String?
+  dosageForm         String?
+  route              String?
+  registrationNumber String?
+  verificationState  SourceVerificationState @default(IMPORTED_UNVERIFIED)
+  verifiedByUserId   String?
+  verifiedAt         DateTime?
+  price              Decimal?                @db.Decimal(10, 2)
+  currency           String?                 @default("EGP")
+  units              String?
+  category           String?
+  indications        String?
+  metadata           Json?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  ingredients   ProductIngredient[]
+  identifiers   DrugProductIdentifier[]
+  sourceRecords DrugProductSourceRecord[]
+
+  @@index([country, brandName])
+  @@index([country, genericName])
+  @@index([sourceId])
+  @@index([verificationState])
+}
+
+model ProductIngredient {
+  id                     String      @id @default(cuid())
+  productId              String
+  ingredientId           String
+  product                DrugProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient             Ingredient  @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  strength               String?
+  strengthNumerator      Decimal?    @db.Decimal(12, 4)
+  strengthNumeratorUnit  String?
+  strengthDenominator    Decimal?    @db.Decimal(12, 4)
+  strengthDenominatorUnit String?
+  isPrimary              Boolean     @default(true)
+  orderIndex             Int         @default(0)
+
+  @@unique([productId, ingredientId])
+  @@index([ingredientId])
+  @@index([productId])
+}
+
+model DrugProductIdentifier {
+  id         String      @id @default(cuid())
+  productId  String
+  product    DrugProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  idType     String      // BARCODE, GTIN, EDA_REG, NDC, RXCUI, DAILYMED_SETID, SLUG, OMC_ID
+  identifier String
+  isValid    Boolean     @default(true)
+  issuer     String?
+
+  @@unique([idType, identifier, productId])
+  @@index([idType, identifier])
+  @@index([productId])
+}
+
+model DrugProductSourceRecord {
+  id               String            @id @default(cuid())
+  productId        String?
+  product          DrugProduct?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  sourceId         String
+  source           DrugCatalogSource @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  importId         String?
+  sourceExternalId String
+  rawPayload       Json
+  license          String
+  retrievedAt      DateTime          @default(now())
+  recordChecksum   String?
+
+  @@index([sourceId, sourceExternalId])
+  @@index([productId])
+}
+
+// ──────────────────── drug-drug interaction knowledge base ────────────────────
+
+enum DdiSeverity {
+  MAJOR
+  MODERATE
+  MINOR
+  UNKNOWN
+}
+
+enum DdiApprovalState {
+  IMPORTED_UNREVIEWED
+  CLINICALLY_APPROVED
+  REJECTED
+  FLAGGED_FOR_REVIEW
+}
+
+enum DdiReviewDecision {
+  APPROVED
+  REJECTED
+  MODIFIED
+  NEEDS_MORE_EVIDENCE
+}
+
+model DdiInteraction {
+  id                    String           @id @default(cuid())
+  ingredientAId         String
+  ingredientBId         String
+  ingredientA           Ingredient       @relation("DdiIngredientA", fields: [ingredientAId], references: [id], onDelete: Restrict)
+  ingredientB           Ingredient       @relation("DdiIngredientB", fields: [ingredientBId], references: [id], onDelete: Restrict)
+  sourceDrugAId         String?          // e.g. "DDInter58"
+  sourceDrugBId         String?          // e.g. "DDInter582"
+  sourceDrugAName       String?
+  sourceDrugBName       String?
+  severity              DdiSeverity      @default(UNKNOWN)
+  description           String?
+  mechanism             String?
+  management            String?
+  source                String           @default("DDInter 2.0")
+  license               String           @default("CC BY-NC-SA 4.0")
+  reference             String?
+  clinicalApprovalState DdiApprovalState @default(IMPORTED_UNREVIEWED)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  reviews DdiReview[]
+
+  @@unique([ingredientAId, ingredientBId, source])
+  @@index([ingredientAId])
+  @@index([ingredientBId])
+  @@index([severity])
+  @@index([clinicalApprovalState])
+}
+
+model DdiReview {
+  id                 String            @id @default(cuid())
+  interactionId      String
+  interaction        DdiInteraction    @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+  reviewerUserId     String
+  reviewerRole       String            // PHARMACIST, PHYSICIAN
+  decision           DdiReviewDecision
+  adjustedSeverity   DdiSeverity?
+  adjustedManagement String?
+  clinicalNotes      String
+  reviewedAt         DateTime          @default(now())
+
+  @@index([interactionId])
+  @@index([reviewerUserId])
+}
+
+model DdiTimingRule {
+  id                  String     @id @default(cuid())
+  ingredientAId       String
+  ingredientBId       String
+  ingredientA         Ingredient @relation("TimingRuleIngredientA", fields: [ingredientAId], references: [id], onDelete: Restrict)
+  ingredientB         Ingredient @relation("TimingRuleIngredientB", fields: [ingredientBId], references: [id], onDelete: Restrict)
+  minIntervalHours    Decimal    @db.Decimal(5, 2)
+  timingInstructionAr String?
+  timingInstructionEn String
+  clinicalReference   String
+  isApproved          Boolean    @default(false)
+  approvedByUserId    String?
+  approvedAt          DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  @@unique([ingredientAId, ingredientBId])
+  @@index([ingredientAId])
+  @@index([ingredientBId])
+}
+
+model DdiUnmatchedRecord {
+  id              String   @id @default(cuid())
+  source          String   @default("DDInter 2.0")
+  sourceDrugAId   String
+  sourceDrugAName String
+  sourceDrugBId   String
+  sourceDrugBName String
+  severity        String
+  reason          String   // UNMATCHED_DRUG_A, UNMATCHED_DRUG_B, AMBIGUOUS_MAPPING
+  rawRecord       Json
+  createdAt       DateTime @default(now())
+
+  @@index([sourceDrugAName])
+  @@index([sourceDrugBName])
+}
