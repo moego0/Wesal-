@@ -118,7 +118,7 @@ async function PatientRecord({
   const activeMedications = patient.medications.filter((m) => m.status === "ACTIVE");
 
   const ddiReport =
-    activeMedications.length >= 2
+    activeMedications.length >= 1
       ? await evaluateMedicationInteractions(
           activeMedications.map((m) => ({
             identifier: m.id,
@@ -303,6 +303,12 @@ async function PatientRecord({
         report={ddiReport}
         patientId={patient.id}
         patientName={patient.fullName}
+        activeMedications={activeMedications.map((m) => ({
+          id: m.id,
+          name: m.medicationNameText,
+          doseAmount: m.doseAmountText || undefined,
+          instructions: (locale === "ar" ? m.instructionsTextAr : m.instructionsTextEn) || undefined,
+        }))}
         locale={locale}
       />
 
@@ -353,6 +359,7 @@ async function PatientRecord({
                         <MedicationInteractionBadge
                           medicationName={medication.medicationNameText}
                           interactions={ddiReport.interactions}
+                          unmatchedMedications={ddiReport.unmatchedMedications}
                           locale={locale}
                         />
                       )}

@@ -23,38 +23,149 @@ import {
   HeartPulse,
   Send,
   Calendar,
+  RefreshCw,
+  Database,
+  Search,
+  AlertOctagon,
 } from "lucide-react";
-import type { InteractionEngineReport, DetectedInteraction } from "@/server/ddi/engine";
+import type {
+  InteractionEngineReport,
+  DetectedInteraction,
+  MedicationCatalogStatus,
+} from "@/server/ddi/engine";
 import { BackgroundGradient } from "@/components/ui/background-gradient";
 import { buttonClass } from "@/components/ui";
 
+export interface ActiveMedicationItem {
+  id: string;
+  name: string;
+  doseAmount?: string;
+  instructions?: string;
+}
+
 export function PatientMedicationInteractions({
-  report,
+  report: initialReport,
   patientId,
   patientName,
+  activeMedications = [],
   locale = "ar",
 }: {
   report: InteractionEngineReport | null;
   patientId: string;
   patientName: string;
+  activeMedications?: ActiveMedicationItem[];
   locale?: string;
 }) {
+  const isAr = locale === "ar";
+  const [report, setReport] = useState<InteractionEngineReport | null>(initialReport);
   const [isExpanded, setIsExpanded] = useState(true);
   const [selectedInteraction, setSelectedInteraction] = useState<DetectedInteraction | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isRechecking, setIsRechecking] = useState(false);
+  const [recheckSuccess, setRecheckSuccess] = useState(false);
+  const [recheckError, setRecheckError] = useState<string | null>(null);
 
-  if (!report || report.patientMedicationsCount < 2) {
+  // If there are no active medications, there is nothing to evaluate
+  if (activeMedications.length === 0 && (!report || report.patientMedicationsCount === 0)) {
     return null;
   }
 
-  const isAr = locale === "ar";
-  const hasInteractions = report.interactionsCount > 0;
-  const hasMajor = report.interactionsBySeverity.major > 0;
-  const hasModerate = report.interactionsBySeverity.moderate > 0;
+  const hasInteractions = Boolean(report && report.interactionsCount > 0);
+  const hasMajor = Boolean(report && report.interactionsBySeverity.major > 0);
+  const unmatched = report?.unmatchedMedications || [];
+  const hasUnmatched = unmatched.length > 0;
+
+  // Re-check action triggered by the user
+  async function handleRecheck() {
+    setIsRechecking(true);
+    setRecheckSuccess(false);
+    setRecheckError(null);
+
+    try {
+      const res = await fetch("/api/clinical/ddi/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          medications: activeMedications.map((m) => ({
+            identifier: m.id,
+            name: m.name,
+            doseAmount: m.doseAmount,
+            instructions: m.instructions,
+          })),
+        }),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as { report: InteractionEngineReport };
+        setReport(data.report);
+        setRecheckSuccess(true);
+        setTimeout(() => setRecheckSuccess(false), 3500);
+      } else {
+        const err = await res.json();
+        setRecheckError(err.error || err.message || (isAr ? "فشل فحص الأدوية" : "Re-check failed"));
+      }
+    } catch (err) {
+      setRecheckError((err as Error).message);
+    } finally {
+      setIsRechecking(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
-      {/* ──────────────── Aceternity BackgroundGradient / DDI Banner ──────────────── */}
+      {/* ──────────────── Action Toolbar / Re-check Strip ──────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+        <div className="flex items-center gap-2">
+          <Database className="size-4 text-teal-600 dark:text-teal-400" />
+          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+            {isAr
+              ? "فحص الكتالوج الدوائي والتفاعلات (DDI & Catalog)"
+              : "Medication Catalog & DDI Status"}
+          </span>
+          {report && (
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+              ({report.patientMedicationsCount} {isAr ? "أدوية نشطة" : "active medications"})
+            </span>
+          )}
+        </div>
+
+        {/* ─── THE RE-CHECK BUTTON ─── */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRecheck}
+            disabled={isRechecking || activeMedications.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-teal-300 bg-teal-50/80 px-3 py-1.5 text-xs font-semibold text-teal-800 shadow-sm transition-all hover:bg-teal-100 hover:border-teal-400 disabled:opacity-50 dark:border-teal-800 dark:bg-teal-950/60 dark:text-teal-300 dark:hover:bg-teal-900"
+            title={isAr ? "إعادة فحص الأدوية النشطة والتحقق من وجودها في قاعدة البيانات" : "Re-check active medications and verify database status"}
+          >
+            <RefreshCw className={`size-3.5 ${isRechecking ? "animate-spin text-teal-600" : ""}`} />
+            <span>
+              {isRechecking
+                ? isAr
+                  ? "جارٍ إعادة الفحص..."
+                  : "Checking database..."
+                : isAr
+                  ? "إعادة فحص الأدوية وقاعدة البيانات"
+                  : "Re-check Drugs & Database"}
+            </span>
+          </button>
+
+          {recheckSuccess && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 animate-in fade-in duration-200">
+              <CheckCircle2 className="size-3.5" />
+              <span>{isAr ? "تم تحديث الفحص بنجاح" : "Up to date"}</span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {recheckError && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-300">
+          {recheckError}
+        </div>
+      )}
+
+      {/* ──────────────── Aceternity BackgroundGradient DDI Alert (If Conflicts Found) ──────────────── */}
       {hasInteractions ? (
         <BackgroundGradient
           variant={hasMajor ? "rose-amber" : "amber-orange"}
@@ -97,8 +208,8 @@ export function PatientMedicationInteractions({
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {isAr
-                    ? `تم اكتشاف ${report.interactionsCount} تفاعل بين أدوية المريض النشطة (${report.patientMedicationsCount} أدوية)`
-                    : `Detected ${report.interactionsCount} interaction(s) across ${report.patientMedicationsCount} active medications`}
+                    ? `تم اكتشاف ${report?.interactionsCount} تفاعل بين أدوية المريض النشطة (${report?.patientMedicationsCount} أدوية)`
+                    : `Detected ${report?.interactionsCount} interaction(s) across ${report?.patientMedicationsCount} active medications`}
                 </p>
               </div>
             </div>
@@ -125,7 +236,7 @@ export function PatientMedicationInteractions({
           </div>
 
           {/* Interaction Items List */}
-          {isExpanded && (
+          {isExpanded && report && (
             <div className="mt-4 space-y-4">
               {report.interactions.map((interaction) => (
                 <InteractionCard
@@ -139,28 +250,6 @@ export function PatientMedicationInteractions({
                 />
               ))}
 
-              {/* Unmatched medications warning */}
-              {report.unmatchedMedications.length > 0 && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
-                  <div className="flex items-center gap-2 font-medium">
-                    <HelpCircle className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span>
-                      {isAr
-                        ? "أدوية تتطلب مراجعة صيدلانية إضافية (غير مطابقة بالكامل في الكتالوج)"
-                        : "Medications requiring manual pharmacist review (unmatched catalog records)"}
-                    </span>
-                  </div>
-                  <ul className="mt-1.5 list-disc ps-5 space-y-0.5 text-slate-600 dark:text-slate-400">
-                    {report.unmatchedMedications.map((u) => (
-                      <li key={u.identifier}>
-                        <span className="font-medium text-slate-800 dark:text-slate-200">{u.name}</span>:{" "}
-                        {u.reason}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               {/* Clinical Disclaimer footer */}
               <div className="flex items-start gap-2 pt-2 text-[11px] text-slate-400 dark:text-slate-500">
                 <Info className="size-3.5 shrink-0 mt-0.5" />
@@ -169,7 +258,7 @@ export function PatientMedicationInteractions({
             </div>
           )}
         </BackgroundGradient>
-      ) : (
+      ) : report && report.patientMedicationsCount >= 2 ? (
         /* ──────────────── No Known Interactions (All Clear) ──────────────── */
         <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/20">
           <div className="flex items-center justify-between gap-3">
@@ -180,7 +269,7 @@ export function PatientMedicationInteractions({
               <div>
                 <h4 className="text-sm font-semibold text-emerald-950 dark:text-emerald-300">
                   {isAr
-                    ? "لم يتم العثور على تفاعلات دوائية مسجلة"
+                    ? "لم يتم العثور على تفاعلات دوائية مسجلة بين الأدوية النشطة"
                     : "No Known Drug Interactions Detected"}
                 </h4>
                 <p className="text-xs text-emerald-800/80 dark:text-emerald-400/80">
@@ -193,11 +282,113 @@ export function PatientMedicationInteractions({
 
             <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-emerald-300/60 bg-emerald-100/60 px-2.5 py-0.5 text-[11px] font-medium text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-900/40 dark:text-emerald-300">
               <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400" />
-              {isAr ? "آمن سريرياً" : "Catalog Verified"}
+              {isAr ? "فحص سريري معتمد" : "Catalog Evaluated"}
             </span>
           </div>
         </div>
+      ) : (
+        /* ──────────────── Single Medication Notice ──────────────── */
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/40">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                <PillIcon className="size-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  {isAr
+                    ? "يوجد دواء واحد نشط فقط للمريض"
+                    : "Single Active Medication"}
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isAr
+                    ? "يتطلب فحص التفاعلات الدوائية (DDI) وجود دوائين نشطين على الأقل. يمكنك فحص حالة الدواء في قاعدة البيانات أدناه."
+                    : "DDI conflict detection requires at least 2 active medications. Review database catalog status below."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────
+          SECTION: "TELL WHICH DRUGS AREN'T IN THE DATABASE"
+          Prominently displays any medications that could NOT be mapped to standardized catalog ingredients.
+         ───────────────────────────────────────────────────────────────────────────── */}
+      {hasUnmatched ? (
+        <div className="rounded-2xl border-2 border-amber-300/80 bg-amber-50/70 p-4 dark:border-amber-800/80 dark:bg-amber-950/30 space-y-3 shadow-sm animate-in fade-in-50 duration-200">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2.5 dark:border-amber-900/60">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-amber-200/80 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                <AlertOctagon className="size-4.5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-2">
+                  <span>
+                    {isAr
+                      ? "أدوية غير مسجلة في قاعدة البيانات (تتطلب تدقيقاً يدوياً):"
+                      : "Medications Not Found in Database (Manual Review Required):"}
+                  </span>
+                  <span className="rounded-md bg-amber-200 px-2 py-0.5 text-[10px] font-extrabold text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+                    {unmatched.length} {isAr ? "غير مسجل" : "Uncataloged"}
+                  </span>
+                </h4>
+                <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                  {isAr
+                    ? "لم يتم العثور على الأدوية التالية في الكتالوج الموحد (eg-drugs, OMC, RxNorm). نظراً لعدم مطابقة المادة الفعالة، لا يمكن حساب تفاعلاتها تلقائياً."
+                    : "The following medications do not match any recognized entity in the unified catalog. Automated DDI checking cannot be completed for these medications."}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {unmatched.map((item) => (
+              <div
+                key={item.identifier + item.name}
+                className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-amber-200 bg-white/90 p-3 shadow-xs dark:border-amber-900/50 dark:bg-slate-900/80"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <PillIcon className="size-4 text-amber-600 dark:text-amber-400" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      {item.name}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
+                      <Database className="size-3" />
+                      {isAr ? "غير مسجل في الكتالوج" : "NOT IN DATABASE"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {isAr ? "سبب عدم المطابقة: " : "Reason: "}
+                    </span>
+                    {isAr
+                      ? "لم يتم العثور على مادة فعالة موحدة مطابقة لهذا الاسم بالكتالوج."
+                      : item.reason}
+                  </p>
+                  <p className="text-[11px] font-medium text-amber-800 dark:text-amber-400">
+                    {isAr
+                      ? "تنبيه سريري: عدم رصد تفاعل لهذا الدواء لا يضمن أمانه. يجب على الصيدلي التحقق يدوياً من مواده الفعالة."
+                      : "Clinical caveat: Absence of interaction records for this drug does not imply safety. Pharmacist must manually inspect active ingredients."}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : report && report.patientMedicationsCount > 0 ? (
+        <div className="rounded-xl border border-teal-200/60 bg-teal-50/40 p-3 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-300 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-4 text-teal-600 dark:text-teal-400 shrink-0" />
+            <span>
+              {isAr
+                ? `جميع أدوية المريض (${report.patientMedicationsCount} أدوية) مسجلة ومطابقة في الكتالوج الموحد للأدوية.`
+                : `All active medications (${report.patientMedicationsCount}) are matched to standardized database catalog records.`}
+            </span>
+          </div>
+        </div>
+      ) : null}
 
       {/* ──────────────── Pharmacist Intervention & Review Modal ──────────────── */}
       {isReviewModalOpen && selectedInteraction && (

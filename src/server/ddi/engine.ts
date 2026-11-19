@@ -38,6 +38,18 @@ export interface DetectedInteraction {
   relatedMedications: string[];
 }
 
+export interface MedicationCatalogStatus {
+  identifier: string;
+  name: string;
+  inDatabase: boolean;
+  resolvedIngredients: Array<{
+    id: string;
+    name: string;
+    nameAr: string | null;
+  }>;
+  reason?: string;
+}
+
 export interface InteractionEngineReport {
   timestamp: string;
   patientMedicationsCount: number;
@@ -56,6 +68,8 @@ export interface InteractionEngineReport {
     name: string;
     reason: string;
   }>;
+  medicationCatalogStatuses: MedicationCatalogStatus[];
+  missingFromDatabaseCount: number;
   ingredientsWithNoDdiData: string[];
   safetyDisclaimer: string;
 }
@@ -76,10 +90,12 @@ export async function evaluateMedicationInteractions(
   const resolvedIngredientsMap = new Map<string, { id: string; name: string; nameAr: string | null }>();
   const ingredientToMedsMap = new Map<string, Set<string>>(); // ingredientId -> Set of medication labels
   const unmatchedMedications: Array<{ identifier: string; name: string; reason: string }> = [];
+  const medicationCatalogStatuses: MedicationCatalogStatus[] = [];
 
   for (const med of medications) {
     const medLabel = med.name || med.drugProductId || med.medicationRecordId || "Unknown Medication";
     let foundIngredients = false;
+    const currentMedIngredients: Array<{ id: string; name: string; nameAr: string | null }> = [];
 
     // 1. By DrugProduct ID
     if (med.drugProductId) {
@@ -95,11 +111,15 @@ export async function evaluateMedicationInteractions(
       if (product && product.ingredients.length > 0) {
         foundIngredients = true;
         for (const pi of product.ingredients) {
-          resolvedIngredientsMap.set(pi.ingredient.id, {
+          const ingObj = {
             id: pi.ingredient.id,
             name: pi.ingredient.name,
             nameAr: pi.ingredient.nameAr,
-          });
+          };
+          resolvedIngredientsMap.set(pi.ingredient.id, ingObj);
+          if (!currentMedIngredients.some((c) => c.id === pi.ingredient.id)) {
+            currentMedIngredients.push(ingObj);
+          }
           if (!ingredientToMedsMap.has(pi.ingredient.id)) {
             ingredientToMedsMap.set(pi.ingredient.id, new Set());
           }
@@ -128,11 +148,15 @@ export async function evaluateMedicationInteractions(
 
         if (ing) {
           foundIngredients = true;
-          resolvedIngredientsMap.set(ing.id, {
+          const ingObj = {
             id: ing.id,
             name: ing.name,
             nameAr: ing.nameAr,
-          });
+          };
+          resolvedIngredientsMap.set(ing.id, ingObj);
+          if (!currentMedIngredients.some((c) => c.id === ing.id)) {
+            currentMedIngredients.push(ingObj);
+          }
           if (!ingredientToMedsMap.has(ing.id)) {
             ingredientToMedsMap.set(ing.id, new Set());
           }
@@ -171,11 +195,15 @@ export async function evaluateMedicationInteractions(
       if (matchingProduct && matchingProduct.ingredients.length > 0) {
         foundIngredients = true;
         for (const pi of matchingProduct.ingredients) {
-          resolvedIngredientsMap.set(pi.ingredient.id, {
+          const ingObj = {
             id: pi.ingredient.id,
             name: pi.ingredient.name,
             nameAr: pi.ingredient.nameAr,
-          });
+          };
+          resolvedIngredientsMap.set(pi.ingredient.id, ingObj);
+          if (!currentMedIngredients.some((c) => c.id === pi.ingredient.id)) {
+            currentMedIngredients.push(ingObj);
+          }
           if (!ingredientToMedsMap.has(pi.ingredient.id)) {
             ingredientToMedsMap.set(pi.ingredient.id, new Set());
           }
@@ -206,11 +234,15 @@ export async function evaluateMedicationInteractions(
 
         if (ing) {
           foundIngredients = true;
-          resolvedIngredientsMap.set(ing.id, {
+          const ingObj = {
             id: ing.id,
             name: ing.name,
             nameAr: ing.nameAr,
-          });
+          };
+          resolvedIngredientsMap.set(ing.id, ingObj);
+          if (!currentMedIngredients.some((c) => c.id === ing.id)) {
+            currentMedIngredients.push(ingObj);
+          }
           if (!ingredientToMedsMap.has(ing.id)) {
             ingredientToMedsMap.set(ing.id, new Set());
           }
@@ -219,11 +251,28 @@ export async function evaluateMedicationInteractions(
       }
     }
 
+    const medId = med.id || med.drugProductId || med.medicationRecordId || "unidentified";
     if (!foundIngredients) {
+      const reason =
+        "Not found in unified database (eg-drugs, OMC, RxNorm). No standardized active ingredients could be resolved for this medication.";
       unmatchedMedications.push({
-        identifier: med.id || med.drugProductId || med.medicationRecordId || "unidentified",
+        identifier: medId,
         name: medLabel,
-        reason: "No standardized active ingredients could be resolved for this medication.",
+        reason,
+      });
+      medicationCatalogStatuses.push({
+        identifier: medId,
+        name: medLabel,
+        inDatabase: false,
+        resolvedIngredients: [],
+        reason,
+      });
+    } else {
+      medicationCatalogStatuses.push({
+        identifier: medId,
+        name: medLabel,
+        inDatabase: true,
+        resolvedIngredients: currentMedIngredients,
       });
     }
   }
@@ -334,6 +383,8 @@ export async function evaluateMedicationInteractions(
     interactionsBySeverity: severityCounts,
     interactions: detectedInteractions,
     unmatchedMedications,
+    medicationCatalogStatuses,
+    missingFromDatabaseCount: unmatchedMedications.length,
     ingredientsWithNoDdiData,
     safetyDisclaimer: MANDATORY_SAFETY_DISCLAIMER,
   };

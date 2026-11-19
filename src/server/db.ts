@@ -1,6 +1,26 @@
+import dns from "node:dns";
+import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import { env } from "./env";
+
+// When local Windows router DNS encounters EAI_AGAIN on Render hostnames, resolve directly
+const originalLookup = dns.lookup;
+(dns as any).lookup = (
+  hostname: string,
+  options: any,
+  callback?: any,
+) => {
+  const cb = typeof options === "function" ? options : callback;
+  const opts = typeof options === "object" ? options : {};
+  if (hostname === "dpg-db8j2k0u01pc738cd2s0-a.oregon-postgres.render.com") {
+    if (opts?.all) {
+      return cb(null, [{ address: "35.227.164.209", family: 4 }]);
+    }
+    return cb(null, "35.227.164.209", 4);
+  }
+  return originalLookup(hostname, options, cb);
+};
 
 function getDatabaseUrl(): string {
   const raw = env().DATABASE_URL;
@@ -21,7 +41,12 @@ function getDatabaseUrl(): string {
  * Prisma 7 gets its connection from a driver adapter rather than the schema.
  */
 function buildClient() {
-  const adapter = new PrismaPg({ connectionString: getDatabaseUrl() });
+  const connectionString = getDatabaseUrl();
+  const pool = new pg.Pool({
+    connectionString,
+    ssl: connectionString.includes("render.com") ? { rejectUnauthorized: false } : undefined,
+  });
+  const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
     adapter,
