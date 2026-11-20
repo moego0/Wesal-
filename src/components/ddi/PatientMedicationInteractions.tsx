@@ -58,7 +58,7 @@ export function PatientMedicationInteractions({
 }) {
   const isAr = locale === "ar";
   const [report, setReport] = useState<InteractionEngineReport | null>(initialReport);
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedInteraction, setSelectedInteraction] = useState<DetectedInteraction | null>(null);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isRechecking, setIsRechecking] = useState(false);
@@ -238,7 +238,7 @@ export function PatientMedicationInteractions({
 
           {/* Interaction Items List */}
           {isExpanded && report && (
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 space-y-4 max-h-[62vh] overflow-y-auto pe-1.5">
               {report.interactions.map((interaction) => (
                 <InteractionCard
                   key={interaction.id}
@@ -255,6 +255,18 @@ export function PatientMedicationInteractions({
               <div className="flex items-start gap-2 pt-2 text-[11px] text-slate-400 dark:text-slate-500">
                 <Info className="size-3.5 shrink-0 mt-0.5" />
                 <p>{report.safetyDisclaimer}</p>
+              </div>
+
+              {/* Bottom Collapse Button */}
+              <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <ChevronUp className="size-3.5" />
+                  <span>{isAr ? "إخفاء التفاصيل" : "Collapse Details"}</span>
+                </button>
               </div>
             </div>
           )}
@@ -552,7 +564,9 @@ function InteractionCard({
                   : `Timing Solution: Minimum ${interaction.timingRule.minIntervalHours} hours interval separation`}
               </p>
               <p className="text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
-                {interaction.timingRule.timingInstructionAr || interaction.timingRule.timingInstructionEn}
+                {isAr
+                  ? interaction.timingRule.timingInstructionAr || interaction.timingRule.timingInstructionEn
+                  : interaction.timingRule.timingInstructionEn || interaction.timingRule.timingInstructionAr}
               </p>
               <div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-amber-800/80 dark:text-amber-400/80">
                 <FileText className="size-3" />
