@@ -64,6 +64,7 @@ export function PatientMedicationInteractions({
   const [isRechecking, setIsRechecking] = useState(false);
   const [recheckSuccess, setRecheckSuccess] = useState(false);
   const [recheckError, setRecheckError] = useState<string | null>(null);
+  const [isUnmatchedExpanded, setIsUnmatchedExpanded] = useState(false);
 
   // If there are no active medications, there is nothing to evaluate
   if (activeMedications.length === 0 && (!report || report.patientMedicationsCount === 0)) {
@@ -313,13 +314,28 @@ export function PatientMedicationInteractions({
 
       {/* ─────────────────────────────────────────────────────────────────────────────
           SECTION: "TELL WHICH DRUGS AREN'T IN THE DATABASE"
-          Prominently displays any medications that could NOT be mapped to standardized catalog ingredients.
+          Collapsible panel for uncataloged medications requiring manual review.
          ───────────────────────────────────────────────────────────────────────────── */}
       {hasUnmatched ? (
-        <div className="rounded-2xl border-2 border-amber-300/80 bg-amber-50/70 p-4 dark:border-amber-800/80 dark:bg-amber-950/30 space-y-3 shadow-sm animate-in fade-in-50 duration-200">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2.5 dark:border-amber-900/60">
+        <div className="rounded-2xl border-2 border-amber-300/80 bg-amber-50/70 p-4 dark:border-amber-800/80 dark:bg-amber-950/30 shadow-sm animate-in fade-in-50 duration-200">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setIsUnmatchedExpanded(!isUnmatchedExpanded)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsUnmatchedExpanded(!isUnmatchedExpanded);
+              }
+            }}
+            className={`flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
+              isUnmatchedExpanded
+                ? "border-b border-amber-200/80 pb-3 dark:border-amber-900/60"
+                : ""
+            }`}
+          >
             <div className="flex items-center gap-2.5">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-amber-200/80 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-200/80 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
                 <AlertOctagon className="size-4.5" />
               </div>
               <div>
@@ -333,49 +349,80 @@ export function PatientMedicationInteractions({
                     {unmatched.length} {isAr ? "غير مسجل" : "Uncataloged"}
                   </span>
                 </h4>
-                <p className="text-[11px] text-amber-800 dark:text-amber-300">
-                  {isAr
-                    ? "لم يتم العثور على الأدوية التالية في الكتالوج الموحد (eg-drugs, OMC, RxNorm). نظراً لعدم مطابقة المادة الفعالة، لا يمكن حساب تفاعلاتها تلقائياً."
-                    : "The following medications do not match any recognized entity in the unified catalog. Automated DDI checking cannot be completed for these medications."}
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
+                  {isUnmatchedExpanded
+                    ? isAr
+                      ? "لم يتم العثور على الأدوية التالية في الكتالوج الموحد (eg-drugs, OMC, RxNorm). نظراً لعدم مطابقة المادة الفعالة، لا يمكن حساب تفاعلاتها تلقائياً."
+                      : "The following medications do not match any recognized entity in the unified catalog. Automated DDI checking cannot be completed for these medications."
+                    : isAr
+                      ? `اضغط هنا لعرض تفاصيل الأدوية غير المسجلة (${unmatched.length}) ومراجعتها يدوياً.`
+                      : `Click to view ${unmatched.length} uncataloged medication(s) requiring manual clinical review.`}
                 </p>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsUnmatchedExpanded(!isUnmatchedExpanded);
+              }}
+              className="flex items-center gap-1.5 rounded-xl border border-amber-300/80 bg-amber-100/70 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200/70 dark:border-amber-800 dark:bg-amber-900/50 dark:text-amber-200 dark:hover:bg-amber-900/80 transition-colors shrink-0"
+              aria-expanded={isUnmatchedExpanded}
+            >
+              <span>
+                {isUnmatchedExpanded
+                  ? isAr
+                    ? "إخفاء التفاصيل"
+                    : "Collapse"
+                  : isAr
+                    ? `عرض الأدوية (${unmatched.length})`
+                    : `View Details (${unmatched.length})`}
+              </span>
+              {isUnmatchedExpanded ? (
+                <ChevronUp className="size-3.5" />
+              ) : (
+                <ChevronDown className="size-3.5" />
+              )}
+            </button>
           </div>
 
-          <div className="space-y-2">
-            {unmatched.map((item) => (
-              <div
-                key={item.identifier + item.name}
-                className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-amber-200 bg-white/90 p-3 shadow-xs dark:border-amber-900/50 dark:bg-slate-900/80"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <PillIcon className="size-4 text-amber-600 dark:text-amber-400" />
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                      {item.name}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
-                      <Database className="size-3" />
-                      {isAr ? "غير مسجل في الكتالوج" : "NOT IN DATABASE"}
-                    </span>
+          {isUnmatchedExpanded && (
+            <div className="space-y-2 pt-3 animate-in fade-in-50 duration-150">
+              {unmatched.map((item) => (
+                <div
+                  key={item.identifier + item.name}
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-amber-200 bg-white/90 p-3 shadow-xs dark:border-amber-900/50 dark:bg-slate-900/80"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <PillIcon className="size-4 text-amber-600 dark:text-amber-400" />
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {item.name}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300">
+                        <Database className="size-3" />
+                        {isAr ? "غير مسجل في الكتالوج" : "NOT IN DATABASE"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {isAr ? "سبب عدم المطابقة: " : "Reason: "}
+                      </span>
+                      {isAr
+                        ? "لم يتم العثور على مادة فعالة موحدة مطابقة لهذا الاسم بالكتالوج."
+                        : item.reason}
+                    </p>
+                    <p className="text-[11px] font-medium text-amber-800 dark:text-amber-400">
+                      {isAr
+                        ? "تنبيه سريري: عدم رصد تفاعل لهذا الدواء لا يضمن أمانه. يجب على الصيدلي التحقق يدوياً من مواده الفعالة."
+                        : "Clinical caveat: Absence of interaction records for this drug does not imply safety. Pharmacist must manually inspect active ingredients."}
+                    </p>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {isAr ? "سبب عدم المطابقة: " : "Reason: "}
-                    </span>
-                    {isAr
-                      ? "لم يتم العثور على مادة فعالة موحدة مطابقة لهذا الاسم بالكتالوج."
-                      : item.reason}
-                  </p>
-                  <p className="text-[11px] font-medium text-amber-800 dark:text-amber-400">
-                    {isAr
-                      ? "تنبيه سريري: عدم رصد تفاعل لهذا الدواء لا يضمن أمانه. يجب على الصيدلي التحقق يدوياً من مواده الفعالة."
-                      : "Clinical caveat: Absence of interaction records for this drug does not imply safety. Pharmacist must manually inspect active ingredients."}
-                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : report && report.patientMedicationsCount > 0 ? (
         <div className="rounded-xl border border-teal-200/60 bg-teal-50/40 p-3 text-xs text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-300 flex items-center justify-between">

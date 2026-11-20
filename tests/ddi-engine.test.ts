@@ -34,6 +34,60 @@ describe("Drug-Drug Interaction (DDI) Engine", { timeout: 20000 }, () => {
     expect(match?.timingRule?.clinicalReference).toContain("FDA Tivicay Prescribing Information");
   });
 
+  it("evaluates seeded pairs: Warfarin + Aspirin, Sildenafil + Nitroglycerin, and Panacode", { timeout: 60000 }, async () => {
+    const { systemPrisma } = await import("@/server/db");
+    const panacode = await systemPrisma.drugProduct.findFirst({
+      where: { brandName: { contains: "panacode", mode: "insensitive" } },
+      include: { ingredients: true },
+    });
+    if (panacode && panacode.ingredients.length === 0) {
+      const paracetamol = await systemPrisma.ingredient.findFirst({
+        where: { name: { equals: "paracetamol", mode: "insensitive" } },
+      });
+      const codeine = await systemPrisma.ingredient.findFirst({
+        where: { name: { equals: "codeine", mode: "insensitive" } },
+      });
+      if (paracetamol && codeine) {
+        await systemPrisma.productIngredient.createMany({
+          data: [
+            { productId: panacode.id, ingredientId: paracetamol.id, strength: "500 mg" },
+            { productId: panacode.id, ingredientId: codeine.id, strength: "30 mg" },
+          ],
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    const result = await evaluateMedicationInteractions([
+      { name: "WARFARIN" },
+      { name: "ASPIRIN" },
+      { name: "Sildenafil" },
+      { name: "NITROGLYCERIN" },
+      { name: "PANACODE" },
+    ]);
+
+    // All 5 drugs should now be matched in the database
+    expect(result.unmatchedMedications).toHaveLength(0);
+
+    // Should detect Warfarin + Aspirin and Sildenafil + Nitroglycerin
+    const warfarinAspirin = result.interactions.find(
+      (i) =>
+        (i.ingredientA.name === "warfarin" && i.ingredientB.name === "aspirin") ||
+        (i.ingredientA.name === "aspirin" && i.ingredientB.name === "warfarin"),
+    );
+    expect(warfarinAspirin).toBeDefined();
+    expect(warfarinAspirin?.severity).toBe("MAJOR");
+
+    const sildenafilNitro = result.interactions.find(
+      (i) =>
+        (i.ingredientA.name === "sildenafil" && i.ingredientB.name === "nitroglycerin") ||
+        (i.ingredientA.name === "nitroglycerin" && i.ingredientB.name === "sildenafil"),
+    );
+    expect(sildenafilNitro).toBeDefined();
+    expect(sildenafilNitro?.severity).toBe("MAJOR");
+    expect(sildenafilNitro?.timingRule?.minIntervalHours).toBe(24);
+  });
+
   it("flags unknown or unresolvable medications explicitly for review", async () => {
     const result = await evaluateMedicationInteractions([
       { name: "UnknownSyntheticSubstance999" },
