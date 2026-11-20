@@ -30,6 +30,7 @@ import {
 import { DeleteMedicationButton } from "@/components/medications/DeleteMedicationButton";
 import { PatientMedicationInteractions } from "@/components/ddi/PatientMedicationInteractions";
 import { MedicationInteractionBadge } from "@/components/ddi/MedicationInteractionBadge";
+import { PatientWeeklyScheduleButton } from "@/components/ddi/PatientWeeklyScheduleModal";
 import { evaluateMedicationInteractions } from "@/server/ddi/engine";
 import { requireSessionUser } from "@/server/auth/current-user";
 import { hasPermission } from "@/server/auth/rbac";
@@ -165,14 +166,24 @@ async function PatientRecord({
           </span>
         }
         actions={
-          hasPermission(user, "patient:write") ? (
-            <Link
-              href={`/patients/${patient.id}/edit`}
-              className={buttonClass("secondary", "sm")}
-            >
-              {locale === "ar" ? "تعديل بيانات المريض" : "Edit patient"}
-            </Link>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            <PatientWeeklyScheduleButton
+              patientName={patient.fullName}
+              patientPhone={patient.phoneE164}
+              medications={activeMedications as any}
+              interactions={ddiReport?.interactions || []}
+              unmatchedMedications={ddiReport?.unmatchedMedications || []}
+              locale={locale}
+            />
+            {hasPermission(user, "patient:write") ? (
+              <Link
+                href={`/patients/${patient.id}/edit`}
+                className={buttonClass("secondary", "sm")}
+              >
+                {locale === "ar" ? "تعديل بيانات المريض" : "Edit patient"}
+              </Link>
+            ) : null}
+          </div>
         }
       />
 
@@ -316,14 +327,24 @@ async function PatientRecord({
         <CardHeader
           title={t("medications")}
           actions={
-            canManageMedications ? (
-              <Link
-                href={`/patients/${patient.id}/medications/new`}
-                className={buttonClass("primary", "sm")}
-              >
-                {t("addMedication")}
-              </Link>
-            ) : undefined
+            <div className="flex flex-wrap items-center gap-2">
+              <PatientWeeklyScheduleButton
+                patientName={patient.fullName}
+                patientPhone={patient.phoneE164}
+                medications={activeMedications as any}
+                interactions={ddiReport?.interactions || []}
+                unmatchedMedications={ddiReport?.unmatchedMedications || []}
+                locale={locale}
+              />
+              {canManageMedications ? (
+                <Link
+                  href={`/patients/${patient.id}/medications/new`}
+                  className={buttonClass("primary", "sm")}
+                >
+                  {t("addMedication")}
+                </Link>
+              ) : undefined}
+            </div>
           }
         />
         <CardBody className="space-y-4">
